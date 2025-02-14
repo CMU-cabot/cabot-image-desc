@@ -1,0 +1,57 @@
+body {
+    margin: 0px;
+}
+#map {
+    position: absolute;
+    height: 80vh;
+    width: 100%;
+}
+#marker {
+    width: 10px;
+    height: 20px;
+    border: 2px solid rgba(0, 0, 0, 0.5);
+    position: fixed;
+    top: 40vh;
+    left: 50vw;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+}
+#marker.hover {
+    background-color: rgba(0, 0, 255, 0.5)
+}
+#popup {
+    position: absolute;
+    background-color: white;
+    padding: 10px;
+    bottom: 0px;
+    left: 0px;
+    height: calc(20vh - 20px);
+    overflow-y: scroll;
+    width: calc(100vw - 20px);
+}
+form {
+    display: inline;
+}
+
+textarea {
+    width: 1000px;
+    max-width: 1000px;
+    height: 5em;
+}
+
+.csv-list {
+    list-style-type: none; /* Remove bullet points */
+    padding: 0;
+    margin: 0;
+    display: inline;
+}
+.csv-list li {
+    display: inline; /* Display items in a single line */
+}
+.csv-list li::after {
+    content: ", "; /* Add a comma and space after each item */
+}
+
+div.location {
+    clear: both;
+}

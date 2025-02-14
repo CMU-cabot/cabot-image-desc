@@ -1,0 +1,76 @@
+services:
+  mongo:
+    image: mongo:4.4.25
+    container_name: geo_mdb
+    volumes:
+      - image_desc_mongodb_data:/data/db
+    networks:
+      - chat_dic_network
+
+  image_desc:
+    image: cmucal/cabot-image_desc:${CABOT_LAUNCH_IMAGE_TAG:-latest}
+    build:
+      context: ./docker
+      additional_contexts:
+        src: ./
+      x-bake:
+        tags:
+          - ${REGISTRY:-cmucal}/cabot-image_desc
+        platforms:
+          - linux/amd64
+          - linux/arm64
+        output:
+          - type=registry
+    ports:
+      - "0.0.0.0:8000:8000"
+    depends_on:
+      - mongo
+    networks:
+      - chat_dic_network
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - "INITIAL_LOCATION=${INITIAL_LOCATION:-{\"lat\": 35.6241, \"lng\":139.7754}}"
+    profiles:
+      - build
+
+  image_desc-prod:
+    extends: image_desc
+    volumes:
+      - ./logs:/app/logs
+    profiles:
+      - prod
+
+  image_desc-dev:
+    extends: image_desc
+    volumes:
+      - ./app:/app
+      - ./static:/static
+      - ./images:/app/images
+    profiles:
+      - dev
+    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  image_desc-upload-prod:
+    extends: image_desc
+    volumes:
+      - ./images:/app/images
+    profiles:
+      - upload
+    command: bash
+
+  image_desc-upload-dev:
+    extends: image_desc
+    volumes:
+      - ./docker:/app
+      - ./images:/app/images
+    profiles:
+      - upload
+    command: bash
+
+networks:
+  chat_dic_network:
+    name: chat_dic_network
+
+volumes:
+  image_desc_mongodb_data:
+    name: image_desc_mongodb_data
