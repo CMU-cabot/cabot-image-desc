@@ -1,23 +1,20 @@
-from fastapi import Query, HTTPException
-from fastapi import FastAPI, Form, HTTPException, Query, Request
+from fastapi import HTTPException
+from fastapi import FastAPI, Form, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from pymongo import MongoClient
-from bson.objectid import ObjectId
 from typing import Optional
 from pydantic import BaseModel
 from openai_agent import GPTAgent, construct_prompt_for_image_description
 from openai_agent import construct_prompt_for_stop_reason
 import os
 import math
-import traceback
 import logging
 import sys
 import time
 import base64
 import datetime
-import numpy as np
 import json
 
 # Set up logging configuration to output to stderr
@@ -206,8 +203,8 @@ def preprocess_descriptions(locations, rotation, lat, lng, max_distance):
         if distance < location_per_directions[direction]["distance"]:
             location_per_directions[direction] = location
 
-    if len(location_per_directions) == 0:
-        result = "近くには説明できるものが何もありません"
+    # if len(location_per_directions) == 0:
+    #     result = "近くには説明できるものが何もありません"
 
     past_explanations = ""
     for past_description in gpt_agent.past_descriptions:
@@ -268,7 +265,7 @@ def read_description_by_lat_lng(
 
 
 @app.post('/description_with_live_image')
-async def read_description_by_lat_lng(
+async def read_description_by_lat_lng_with_image(
     request: Request,
     lat: float = Query(...),
     lng: float = Query(...),
@@ -512,6 +509,7 @@ async def clear_tag(id: str = Query(...)):
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     return await read_index()
+
 
 @app.get("/index.html", response_class=HTMLResponse)
 async def read_index():

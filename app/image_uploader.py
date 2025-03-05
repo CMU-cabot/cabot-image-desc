@@ -2,7 +2,6 @@
 
 import base64
 import os
-import sys
 import argparse
 import datetime
 from io import BytesIO
