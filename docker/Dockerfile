@@ -1,16 +1,7 @@
 FROM python:3.9
 
-RUN pip install --no-cache-dir \
-        fastapi \
-        geopy \
-        openai \
-        opencv-python-headless \
-        piexif \
-        pillow \
-        pymongo \
-        python-multipart \
-        requests \
-        uvicorn
+COPY requirements.txt requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY --from=src ./app /app
 COPY --from=src ./static /static
