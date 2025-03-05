@@ -30,6 +30,9 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - "INITIAL_LOCATION=${INITIAL_LOCATION:-{\"lat\": 35.6241, \"lng\":139.7754}}"
+      - API_KEY
+      - USERNAMES
+      - PASSWORDS
     profiles:
       - build
 

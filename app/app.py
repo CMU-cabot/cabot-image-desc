@@ -1,7 +1,8 @@
-from fastapi import HTTPException
-from fastapi import FastAPI, Form, Query, Request
-from fastapi.responses import HTMLResponse
+from fastapi import HTTPException, status, Response
+from fastapi import FastAPI, Form, Query, Request, Header, Depends
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import OAuth2PasswordBearer
 from pathlib import Path
 from pymongo import MongoClient
 from typing import Optional
@@ -16,6 +17,7 @@ import time
 import base64
 import datetime
 import json
+import secrets
 
 # Set up logging configuration to output to stderr
 logging.basicConfig(
@@ -38,6 +40,67 @@ image_collection = db['images']
 
 # Ensure the collection is indexed for geospatial queries
 image_collection.create_index([("location", "2dsphere")])
+
+API_KEY = os.getenv("API_KEY")
+
+# Store tokens in memory for simplicity (consider using a database for production)
+tokens = set()
+
+def generate_token():
+    return secrets.token_hex(16)
+
+def verify_api_key():
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid API Key")
+
+def verify_api_key_or_cookie(request: Request, x_api_key: Optional[str] = Header(None)):
+    if x_api_key and x_api_key == API_KEY:
+        return
+    token = request.cookies.get("token")
+    if not token or token not in tokens:
+        raise HTTPException(
+            status_code=status.HTTP_303_SEE_OTHER,
+            detail="Redirecting to login",
+            headers={"Location": f"/login?next={request.url.path}"}
+        )
+
+# Load users from environment variables
+users = {}
+usernames = os.getenv("USERNAMES", "").split(",")
+passwords = os.getenv("PASSWORDS", "").split(",")
+if len(usernames) != len(passwords):
+    raise ValueError("USERNAMES and PASSWORDS environment variables must have the same number of entries")
+
+for username, password in zip(usernames, passwords):
+    users[username] = password
+
+@app.post("/login")
+async def login(request: Request, response: Response, username: str = Form(...), password: str = Form(...), next: Optional[str] = None):
+    correct_password = users.get(username)
+    if not correct_password or not secrets.compare_digest(correct_password, password):
+        return HTMLResponse(content="Invalid username or password", status_code=status.HTTP_401_UNAUTHORIZED)
+    token = generate_token()
+    tokens.add(token)
+    redirect_url = next if next else "/"
+    response = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
+    response.set_cookie(key="token", value=token, httponly=True, secure=True, path="/")
+    return response
+
+@app.get("/logout")
+async def logout(response: Response, request: Request):
+    token = request.cookies.get("token")
+    if token in tokens:
+        tokens.remove(token)
+    response.delete_cookie("token", path="/")
+    return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(next: Optional[str] = None):
+    login_path = Path("/static/login.html")
+    html_content = login_path.read_text()
+    if next:
+        html_content = html_content.replace('action="/login"', f'action="/login?next={next}"')
+    return HTMLResponse(content=html_content)
 
 # Read locations by latitude, longitude, and optional distance
 
@@ -62,7 +125,7 @@ def get_locations_by_lat_lng(lat, lng, distance):
 # API to get a location by its ID
 
 
-@app.get('/locations/{location_id}')
+@app.get('/locations/{location_id}', dependencies=[Depends(verify_api_key_or_cookie)])
 def read_location(location_id: str):
     location = image_collection.find_one({"_id": location_id})
     if not location:
@@ -73,7 +136,7 @@ def read_location(location_id: str):
 # API to get locations by latitude, longitude, and optional distance
 
 
-@app.get('/locations')
+@app.get('/locations', dependencies=[Depends(verify_api_key_or_cookie)])
 def read_locations_by_lat_lng(lat: float = Query(...), lng: float = Query(...), distance: Optional[float] = Query(1000)):
     locations = get_locations_by_lat_lng(lat, lng, distance)
     if not locations:
@@ -220,7 +283,7 @@ def preprocess_descriptions(locations, rotation, lat, lng, max_distance):
 # Endpoint to read description by latitude and longitude
 
 
-@app.get('/description')
+@app.get('/description', dependencies=[Depends(verify_api_key_or_cookie)])
 def read_description_by_lat_lng(
         lat: float = Query(...),
         lng: float = Query(...),
@@ -264,7 +327,7 @@ def read_description_by_lat_lng(
 # TODO: upload a live image and describe the image, using nearby data
 
 
-@app.post('/description_with_live_image')
+@app.post('/description_with_live_image', dependencies=[Depends(verify_api_key_or_cookie)])
 async def read_description_by_lat_lng_with_image(
     request: Request,
     lat: float = Query(...),
@@ -333,7 +396,7 @@ async def read_description_by_lat_lng_with_image(
     }
 
 
-@app.post("/stop_reason")
+@app.post("/stop_reason", dependencies=[Depends(verify_api_key_or_cookie)])
 async def stop_reason(
     request: Request,
     lat: float = Query(...),
@@ -447,7 +510,7 @@ def log_image(directory, position, images):
         f.write(base64.b64decode(image_uri.split(",")[1]))
 
 
-@app.post("/update_description")
+@app.post("/update_description", dependencies=[Depends(verify_api_key_or_cookie)])
 async def update(id: str = Query(...), description: str = Form(...)):
     logger.info(["updateDescription", id, description])
     # Find the document by ID
@@ -462,7 +525,7 @@ async def update(id: str = Query(...), description: str = Form(...)):
     return {"message": "Description updated successfully", "description": description}
 
 
-@app.post("/add_tag")
+@app.post("/add_tag", dependencies=[Depends(verify_api_key_or_cookie)])
 async def add_tag(id: str = Query(...), tag: str = Form(...)):
     logger.info(["addTag", id, tag])
     # Find the document by ID
@@ -485,7 +548,7 @@ async def add_tag(id: str = Query(...), tag: str = Form(...)):
     return {"message": "Tag added successfully", "tag": tag, "all_tags": updated_tags}
 
 
-@app.post("/clear_tag")
+@app.post("/clear_tag", dependencies=[Depends(verify_api_key_or_cookie)])
 async def clear_tag(id: str = Query(...)):
     logger.info(["clearTag", id])
     # Find the document by ID
@@ -506,17 +569,25 @@ async def clear_tag(id: str = Query(...)):
 # Serve index.html on accessing root path
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=HTMLResponse, dependencies=[Depends(verify_api_key_or_cookie)])
 async def read_root():
     return await read_index()
 
 
-@app.get("/index.html", response_class=HTMLResponse)
+@app.get("/index.html", response_class=HTMLResponse, dependencies=[Depends(verify_api_key_or_cookie)])
 async def read_index():
     index_path = Path("/static/index.html")
     initial_location = os.getenv("INITIAL_LOCATION", '{"lat": 35.62414166666667, "lng": 139.77542222222223, "floor": 1}')
     html_content = index_path.read_text().replace("INITIAL_LOCATION_PLACEHOLDER", initial_location)
     return HTMLResponse(content=html_content)
+
+
+@app.get("/list.html", response_class=HTMLResponse, dependencies=[Depends(verify_api_key_or_cookie)])
+async def read_list():
+    index_path = Path("/static/list.html")
+    html_content = index_path.read_text()
+    return HTMLResponse(content=html_content)
+
 
 # Mount static files for serving HTML, JS, and CSS
 app.mount("/js/lib", StaticFiles(directory="/static_js_lib"), name="static/js/lib")
