@@ -18,7 +18,6 @@ services:
           - ${REGISTRY:-cmucal}/cabot-image_desc
         platforms:
           - linux/amd64
-          - linux/arm64
         output:
           - type=registry
     ports:
@@ -30,6 +29,11 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - "INITIAL_LOCATION=${INITIAL_LOCATION:-{\"lat\": 35.6241, \"lng\":139.7754}}"
+      - API_KEY
+      - USERNAMES
+      - PASSWORDS
+      - MONGODB_HOST
+      - MONGODB_NAME
     profiles:
       - build
 
@@ -61,7 +65,7 @@ services:
   image_desc-upload-dev:
     extends: image_desc
     volumes:
-      - ./docker:/app
+      - ./app:/app
       - ./images:/app/images
     profiles:
       - upload
