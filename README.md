@@ -19,7 +19,7 @@ INITIAL_LOCATION='{"lng": -79.94565, "lat": 40.44335, "rotate": 1, "zoom": 21}'
 - Put all images into `./images` dir
 - Put the exported json file into `./images` dir
 
-## build docker mage
+## build docker image
 
 ```
 ./bake-docker.sh -i
