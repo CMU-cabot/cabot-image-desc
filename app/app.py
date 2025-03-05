@@ -34,8 +34,10 @@ app = FastAPI()
 gpt_agent = GPTAgent()
 
 # Configure MongoDB connection
-client = MongoClient('mongodb://mongo:27017/')
-db = client['geo_image_db']
+mongodb_host = os.getenv('MONGODB_HOST', 'mongodb://mongo:27017/')
+mongodb_name = os.getenv('MONGODB_NAME', 'geo_image_db')
+client = MongoClient(mongodb_host)
+db = client[mongodb_name]
 image_collection = db['images']
 
 # Ensure the collection is indexed for geospatial queries
