@@ -1,4 +1,4 @@
-from openai import OpenAI
+from openai import AsyncOpenAI
 import base64
 import cv2
 import os
@@ -217,7 +217,7 @@ class GPTAgent:
         self.api_key = os.environ.get('OPENAI_API_KEY')
         if not self.api_key:
             raise ValueError("Please set the OPENAI_API_KEY environment variable.")
-        self.client = OpenAI()
+        self.client = AsyncOpenAI()
         self.model = model
         self.past_descriptions = []
 
@@ -255,7 +255,7 @@ class GPTAgent:
         self.past_descriptions.append({"description": description, "location": {"lat": lat, "lng": lng}})
 
     # Function to query with images
-    def query_with_images(self, prompt, images=[], max_tokens=3000, response_format=None):
+    async def query_with_images(self, prompt, images=[], max_tokens=3000, response_format=None):
         # Preparing the content with the prompt and images
         messages = [
             {
@@ -292,9 +292,9 @@ class GPTAgent:
         # Making the API call
         if response_format:
             query2 = {**query, **{"response_format": response_format}}
-            response = self.client.beta.chat.completions.parse(**query2)
+            response = await self.client.beta.chat.completions.parse(**query2)
         else:
-            response = self.client.chat.completions.create(**query)
+            response = await self.client.chat.completions.create(**query)
         return (response, query)
 
 

@@ -286,7 +286,7 @@ def preprocess_descriptions(locations, rotation, lat, lng, max_distance):
 
 
 @app.get('/description', dependencies=[Depends(verify_api_key_or_cookie)])
-def read_description_by_lat_lng(
+async def read_description_by_lat_lng(
         lat: float = Query(...),
         lng: float = Query(...),
         rotation: float = Query(...),
@@ -311,7 +311,7 @@ def read_description_by_lat_lng(
                                                     )
 
     st = time.time()
-    (original_result, query) = gpt_agent.query_with_images(
+    (original_result, query) = await gpt_agent.query_with_images(
         prompt=prompt
     )
     elapsed_time = time.time() - st
@@ -364,7 +364,7 @@ async def read_description_by_lat_lng_with_image(
                                                     image_tags=tags)
 
     st = time.time()
-    (original_result, query) = gpt_agent.query_with_images(
+    (original_result, query) = await gpt_agent.query_with_images(
         prompt=prompt,
         images=images
     )
@@ -449,7 +449,7 @@ async def stop_reason(
         def to_dict(self):
             return self.dict()
     st = time.time()
-    (original_result, query) = gpt_agent.query_with_images(prompt=prompt, images=temp, response_format=StopReason)
+    (original_result, query) = await gpt_agent.query_with_images(prompt=prompt, images=temp, response_format=StopReason)
     elapsed_time = time.time() - st
     description = original_result.choices[0].message.parsed.message
     logger.info("Time taken: %s", elapsed_time)
