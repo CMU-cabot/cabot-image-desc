@@ -55,33 +55,59 @@ MONGODB_NAME=geo_image_db
 ./launch.sh -d
 ```
 
-## upload image(s), add tag
+## manage images
 
-- Uploaded image will be sent to OpenAI to get description and saved into local mongodb
+- Use `manage-images.sh` to upload images, add tags, check EXIF data, and more.
+- You can specify a local image or a local directory  (do not need to put them under ./images dir, but images dir will be mounted to docker container at this moment)
 
 ```
-./launch.sh -u ./image_uploader.py -f <image_file>
-./launch.sh -u ./image_uploader.py -f <image_file> -r  # retry description
-./launch.sh -u ./image_uploader.py -f <image_file> -t <tag1> -t <tag2> # clear and add tag
-```
+# Upload a single image or all images in a directory  (if there is already description in the db, do not nothing)
+./manage-images.sh -i <image_file>
+./manage-images.sh -I <directory>  
 
-- Upload/update images in a dir
-```
-./launch.sh -u ./upload_all.sh -d <image_dir>   # dryrun to check which file will be uploaded
-./launch.sh -u ./upload_all.sh <image_dir>
-./launch.sh -u ./upload_all.sh -r <image_dir>   # retry description for all images
-```
+# Re-generate description
+./manage-images.sh -i <image_file> -r
+./manage-images.sh -I <directory> -r
 
-- Upload/update images in a dir with a tag
-```
-./launch.sh -u ./upload_all_with_tag.sh -d <image_dir> <tag>   # dryrun to check which file will be uploaded
-./launch.sh -u ./upload_all_with_tag.sh <image_dir> <tag>      # clear and add tag to the images
+# (Re-)generate description with a prompt (see default-prompt.txt)
+./manage-images.sh -i <image_file> (-r) -p <prompt file>
+./manage-images.sh -I <directory> (-r) -p <prompt file>
+
+# Check EXIF data of the image/images
+./manage-images.sh -i <image_file> -e
+./manage-images.sh -I <directory>  -e
+
+# Specify the floor of the image/images
+./manage-images.sh -i <image_file> -F <floor> 
+./manage-images.sh -I <directory>  -F <floor> 
+
+# Add a tag / tags to the image/images
+./manage-images.sh -i <image_file> -t <tag1> -t <tag2> 
+./manage-images.sh -I <directory> -t <tag1> -t <tag2> 
+
+# Rmove a tag / tags to the image/images
+./manage-images.sh -i <image_file> -T <tag1> -T <tag2> 
+./manage-images.sh -I <directory> -T <tag1> -T <tag2> 
+
+# Clear all tags from the image/images
+./manage-images.sh -i <image_file> -c
+./manage-images.sh -I <directory> -c
+
+# check json of the image
+./manage-images.sh -i <image_file> -j
+
+# List all json IDs
+./manage-images.sh -l
+
+# Remove the JSON ID from the database
+./manage-images.sh -R <jsonid>
 ```
 
 ## import data
 
 - Import json data
   - if there is existing data, update it
+  - data should be under images dir
 
 ```
 ./launch.sh -u ./import_data.py images/<import.json>
