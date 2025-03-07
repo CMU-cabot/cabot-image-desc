@@ -12,6 +12,9 @@ OPENAI_API_KEY=<key>
 # default lng=0, lat=0, rotate=0, zoom=21, please specify the center of your environment
 INITIAL_LOCATION='{"lng": -79.94565, "lat": 40.44335, "rotate": 1, "zoom": 21}'
 
+# set API_KEY for remote access
+API_KEY=
+
 # if you want to use web UI, set users and passwords
 USERNAMES=<user1>[,<user2>]...
 PASSWORDS=<pass1>[,<pass2>]...

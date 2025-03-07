@@ -12,6 +12,9 @@ from PIL import Image
 from PIL.ExifTags import TAGS, GPSTAGS
 from PIL.TiffImagePlugin import IFDRational
 import hashlib
+import sys
+import json
+from bson import ObjectId
 
 IMAGE_DESCRIPTION_PROMPT = """
 # 概要
@@ -52,14 +55,31 @@ def transcribe_image_query(filepath):
             return d + (m / 60.0) + (s / 3600.0)
         gps_info = {}
         exif = {}
+
+        def normalize(value):
+            if isinstance(value, IFDRational):
+                float(value)
+            elif isinstance(value, (int, str)):
+                return value
+            elif isinstance(value, bytes):
+                # convert bytes to hex string
+                return f"0x{value.hex()}"
+            elif isinstance(value, tuple):
+                return [float(e) for e in value]
+            else:
+                print([tag_name, type(value), value], file=sys.stderr)
+                return None
+
         for tag, value in exif_data.items():
             tag_name = TAGS.get(tag, tag)
             if tag_name == 'GPSInfo':
+                exif[tag_name] = {}
                 gps_latitude = None
                 gps_longitude = None
                 gps_direction = None
                 for gps_tag in value:
                     sub_tag_name = GPSTAGS.get(gps_tag, gps_tag)
+                    exif[tag_name][sub_tag_name] = normalize(value[gps_tag])
                     if sub_tag_name == 'GPSLatitude':
                         gps_latitude = convert_to_degrees(value[gps_tag])
                     elif sub_tag_name == 'GPSLatitudeRef':
@@ -78,14 +98,8 @@ def transcribe_image_query(filepath):
                 if gps_direction is not None:
                     gps_info['Direction'] = gps_direction
             else:
-                if isinstance(value, IFDRational):
-                    exif[tag_name] = float(value)
-                elif isinstance(value, (int, str)):
-                    exif[tag_name] = value
-                elif isinstance(value, tuple):
-                    exif[tag_name] = [float(e) for e in value]
-                else:
-                    print([tag_name, type(value), value])
+                if normalize(value):
+                    exif[tag_name] = normalize(value)
         return gps_info, exif
 
     def get_md5_hash(filepath):
@@ -132,7 +146,7 @@ def transcribe_image_query(filepath):
                 'content': [
                     {
                         'type': 'text',
-                        'text': IMAGE_DESCRIPTION_PROMPT.format(longitude=gps_info['Longitude'], latitude=gps_info['Latitude'], direction=gps_info['Direction'])
+                        'text': IMAGE_DESCRIPTION_PROMPT
                     },
                     {
                         'type': 'image_url',
@@ -169,6 +183,38 @@ def get_result(response, metadata):
     return metadata
 
 
+class JSONEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, ObjectId):
+            return str(o)
+        return super().default(o)
+
+
+def pretty_json(data):
+    print(json.dumps(data, indent=2, ensure_ascii=False, cls=JSONEncoder))
+
+
+def pretty_print(data, depth=1, exclude=None, prefix=''):
+    if isinstance(data, dict):
+        for key in data:
+            if exclude and key in exclude:
+                continue
+            print(F"{'  ' * depth}{prefix}{key}:")
+            pretty_print(data[key], depth=depth + 1)
+    elif isinstance(data, list):
+        for item in data:
+            pretty_print(item, depth=depth, prefix='- ')
+    elif isinstance(data, str):
+        # print escaped str
+        escaped = data.replace('\n', '\\n').replace('\r', '\\r')
+        # truncate long strings at 200 characters
+        if len(escaped) > 100:
+            escaped = escaped[:100] + '...'
+        print(F"{'  ' * depth}{prefix}{escaped}")
+    else:
+        print(F"{'  ' * depth}{prefix}{data}")
+
+
 # Configure MongoDB connection
 mongodb_host = os.getenv('MONGODB_HOST', 'mongodb://mongo:27017/')
 mongodb_name = os.getenv('MONGODB_NAME', 'geo_image_db')
@@ -178,58 +224,121 @@ collection = db['images']
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Process an image file to transcribe its content.')
-    parser.add_argument('-f', '--file', required=True, help='Path to the image file')
-    parser.add_argument('-t', '--tags', nargs='*', help='Tags to associate with the image')
+    parser.add_argument('-f', '--file', help='Path to the image file')
+    parser.add_argument('-p', '--prompt', help='Prompt to use for the image description')
+    parser.add_argument('-F', '--floor', type=int, help='Floor number of the building')
+    parser.add_argument('-e', '--exif', action='store_true', help='Check the exif data of the image')
+    parser.add_argument('-t', '--tag', action='append', help='Tags to associate with the image (can be used multiple times)')
+    parser.add_argument('-T', '--removetag', action='append', help='Tags to remove from the image')
     parser.add_argument('-c', '--clear-tags', action='store_true', help='Clear all tags from the image')
-    parser.add_argument('-d', '--dryrun', action='store_true', help='Perform a dry run without modifying the database')
+    parser.add_argument('-n', '--dryrun', action='store_true', help='Perform a dry run without modifying the database')
     parser.add_argument('-r', '--retry', action='store_true', help='Descrtibe image even if the entry has already description')
+    parser.add_argument('-l', '--list', action='store_true', help='List all images in the database')
+    parser.add_argument('-j', '--json', action='store_true', help='Output the json data of the file')
+    parser.add_argument('-J', '--jsonid', type=str, help='Output the json data of the ID')
+    parser.add_argument('-R', '--remove', type=str, help='Remove the entry with the given ID')
     args = parser.parse_args()
+
+    print(args)
+
+    if args.list:
+        for entry in collection.find():
+            print(F"ID: {entry['_id']} Filename: {entry['filename']}")
+        sys.exit(0)
+
+    if args.jsonid:
+        entry = collection.find_one({'_id': ObjectId(args.jsonid)})
+        if entry:
+            pretty_json(entry)
+        else:
+            print(f"No entry found with ID: {args.jsonid}")
+        sys.exit(0)
+    if args.remove:
+        result = collection.delete_one({'_id': ObjectId(args.remove)})
+        print(result)
+        sys.exit(0)
 
     filepath = args.file
     query, metadata = transcribe_image_query(filepath)
+    if args.floor is not None:
+        metadata['floor'] = args.floor
+
+    if args.exif:
+        pretty_print(metadata['exif'])
+        sys.exit(0)
+
+    if args.prompt:
+        with open(args.prompt, 'r') as f:
+            IMAGE_DESCRIPTION_PROMPT = f.readlines()
+            print("Custom prompt is used:")
+            print(IMAGE_DESCRIPTION_PROMPT)
 
     existing_entry = collection.find_one({
         'filename': metadata['filename'],
         'image_hash': metadata['image_hash']
     })
 
+    if args.json:
+        pretty_json(existing_entry)
+        sys.exit(0)
+
     if existing_entry:
-        if args.clear_tags:
-            existing_entry['tags'] = []
-        elif args.tags:
-            existing_entry['tags'] = args.tags
         update = {}
         for key in metadata:
             if key not in existing_entry or existing_entry[key] != metadata[key]:
                 update[key] = metadata[key]
+
+        if args.clear_tags:
+            update["tags"] = []
+        else:
+            if args.tag:
+                update["tags"] = list(set(args.tag + existing_entry["tags"]))
+            if args.removetag:
+                update["tags"] = list(set(existing_entry["tags"]) - set(args.removetag))
+
         if args.dryrun:
-            print(F"Dry run: The image is already transcribed ({existing_entry['_id']}): {existing_entry['description']}, with updated: {update=}")
+            print(F"Dry run: The image is already transcribed ({existing_entry['_id']}):")
+            pretty_print(existing_entry['description'])
+            if update:
+                print("The entry will be updated with:")
+                pretty_print(update, depth=1)
             if args.retry:
-                print(F"Will retry description {query}")
+                print("Will retry description with:")
+                pretty_print(query)
         else:
             if args.retry:
                 response = post_query(query)
-                print(F"Received data: {response}")
+                print("Received data:")
+                pretty_print(response)
                 data = get_result(response, metadata)
                 for key in data:
                     if key not in existing_entry or existing_entry[key] != data[key]:
                         update[key] = data[key]
 
-            collection.update_one(
-                {'_id': existing_entry['_id']},
-                {'$set': update}
-            )
-            print(F"The image is already transcribed ({existing_entry['_id']}): {existing_entry['description']}, with updated: {update=}")
+            print(F"The image is already transcribed ({existing_entry['_id']}):")
+            pretty_print(existing_entry['description'])
+            if update:
+                collection.update_one(
+                    {'_id': existing_entry['_id']},
+                    {'$set': update}
+                )
+                print("The entry has been updated with:")
+                pretty_print(update, depth=1)
     else:
         if args.dryrun:
-            print(f"Dry run: Would post query and insert data for image: {filepath}\n{query}")
+            print(f"Dry run: Would post query and insert data for image: {filepath}")
+            pretty_print(query)
         else:
             print("Posting query")
             response = post_query(query)
-            print(F"Received data: {response}")
+            print("Received data:")
+            pretty_print(response)
             data = get_result(response, metadata)
-            if args.tags:
-                data['tags'] = args.tags
+            if args.tag:
+                data['tags'] = args.tag
+            if 'floor' not in data:
+                data['floor'] = 0
             print("Insert data into the DB")
-
             collection.insert_one(data)
+            print("Description:")
+            pretty_print(data, exclude=['image', 'exif'])

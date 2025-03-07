@@ -219,6 +219,7 @@ function showFeature(feature) {
     var filename = feature.get('filename')
     var date = new Date(linuxtime * 1000);
     var orientation = feature.get('exif')['Orientation']
+    var floor = feature.get('floor')
     var relative_direction = feature.get('relative_direction')
     var relative_coordinates = feature.get('relative_coordinates')
     var image = feature.get('image');
@@ -252,6 +253,14 @@ function showFeature(feature) {
             <input type="submit" value="Update">
         </form>
     `;
+
+    var floorHTML = `
+        <form id="floorEdit">
+            <input type="text" name="floor" value="${floor}">
+            <input type="hidden" name="id" value="${id}">
+            <input type="submit" value="Update">
+        </form>
+    `;
     
     // Display the information in the popup
     popup.innerHTML = `
@@ -260,7 +269,7 @@ function showFeature(feature) {
         <strong>Description:</strong> ${descriptionHTML} <br>
         <strong>Orientation:</strong> ${orientation} <br>
         <strong>Tags:</strong> ${tagsHTML} <br>
-        <strong>Direction:</strong> ${direction} <br>
+        <strong>Floor:</strong> ${floor} ${floorHTML} <strong>Direction:</strong> ${direction} <br>
     `
     if (relative_direction) {
         popup.innerHTML += `
@@ -286,13 +295,13 @@ function showFeature(feature) {
                 throw new Error("Network response was not ok");
             }
             console.log(response);
-            feature.set("tags", [])
-            showFeature(feature)
+            feature.set("tags", []);
+            showFeature(feature);
         } catch (error) {
             console.error("Error:", error);
         }
     });
-    document.getElementById("addTag").addEventListener("submit", async function(event) {
+    document.getElementById(`addTag`).addEventListener("submit", async function(event) {
         event.preventDefault(); // Prevent form from reloading the page
         const formData = new FormData(event.target);
         const id = formData.get("id");
@@ -310,13 +319,13 @@ function showFeature(feature) {
             if (!tags.includes(tag)) {
                 tags.push(tag)
             }
-            feature.set("tags", tags)
-            showFeature(feature)
+            feature.set("tags", tags);
+            showFeature(feature);
         } catch (error) {
             console.error("Error:", error);
         }
     });
-    document.getElementById("descriptionEdit").addEventListener("submit", async function(event) {
+    document.getElementById(`descriptionEdit`).addEventListener("submit", async function(event) {
         event.preventDefault(); // Prevent form from reloading the page
         const formData = new FormData(event.target);
         const id = formData.get("id");
@@ -330,6 +339,28 @@ function showFeature(feature) {
                 throw new Error("Network response was not ok");
             }
             console.log(response);
+            feature.set("description", description);
+            showFeature(feature);
+        } catch (error) {
+            console.error("Error:", error);
+        }
+    });
+    document.getElementById(`floorEdit`).addEventListener("submit", async function(event) {
+        event.preventDefault(); // Prevent form from reloading the page
+        const formData = new FormData(event.target);
+        const id = formData.get("id");
+        const floor = formData.get("floor");
+        try {
+            const response = await fetch("/update_floor?id=" + id, {
+                method: "POST",
+                body: formData,
+            });
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+            console.log(response);
+            feature.set("floor", floor);
+            showFeature(feature);
         } catch (error) {
             console.error("Error:", error);
         }

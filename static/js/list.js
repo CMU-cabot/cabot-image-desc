@@ -62,6 +62,7 @@ function showLocation(location) {
     var filename = location.filename;
     var date = new Date(linuxtime * 1000);
     var orientation = location.exif.Orientation;
+    var floor = location.floor;
     var relative_direction = location.exif.relative_direction;
     var relative_coordinates = location.relative_coordinates;
     var image = location.image;
@@ -95,6 +96,14 @@ function showLocation(location) {
             <input type="submit" value="Update">
         </form>
     `;
+
+    var floorHTML = `
+        <form id="floorEdit-${id}">
+            <input type="text" name="floor" value="${floor}">
+            <input type="hidden" name="id" value="${id}">
+            <input type="submit" value="Update">
+        </form>
+    `;
     
     // Display the information in the popup
     div.innerHTML = `
@@ -103,7 +112,7 @@ function showLocation(location) {
         <strong>Description:</strong> ${descriptionHTML} <br>
         <strong>Orientation:</strong> ${orientation} <br>
         <strong>Tags:</strong> ${tagsHTML} <br>
-        <strong>Direction:</strong> ${direction} <br>
+        <strong>Floor:</strong> ${floor} ${floorHTML} <strong>Direction:</strong> ${direction} <br>
     `
     if (relative_direction) {
         div.innerHTML += `
@@ -173,6 +182,28 @@ function showLocation(location) {
                 throw new Error("Network response was not ok");
             }
             console.log(response);
+            location.description = description;
+            showLocation(location);
+        } catch (error) {
+            console.error("Error:", error);
+        }
+    });
+    document.getElementById(`floorEdit-${id}`).addEventListener("submit", async function(event) {
+        event.preventDefault(); // Prevent form from reloading the page
+        const formData = new FormData(event.target);
+        const id = formData.get("id");
+        const floor = formData.get("floor");
+        try {
+            const response = await fetch("/update_floor?id=" + id, {
+                method: "POST",
+                body: formData,
+            });
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+            console.log(response);
+            location.floor = floor;
+            showLocation(location);
         } catch (error) {
             console.error("Error:", error);
         }

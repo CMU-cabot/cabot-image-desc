@@ -8,6 +8,7 @@ from typing import Optional
 from pydantic import BaseModel
 from openai_agent import GPTAgent, construct_prompt_for_image_description
 from openai_agent import construct_prompt_for_stop_reason
+from bson import ObjectId
 import os
 import math
 import logging
@@ -130,7 +131,7 @@ def get_locations_by_lat_lng(lat, lng, distance):
 
 @app.get('/locations/{location_id}', dependencies=[Depends(verify_api_key_or_cookie)])
 def read_location(location_id: str):
-    location = image_collection.find_one({"_id": location_id})
+    location = image_collection.find_one({"_id": ObjectId(location_id)})
     if not location:
         raise HTTPException(status_code=404, detail='Location not found')
     location['_id'] = str(location['_id'])
@@ -231,7 +232,7 @@ def preprocess_descriptions(locations, rotation, lat, lng, max_distance):
 
     location_per_directions = {"front": dummy_object, "left": dummy_object, "right": dummy_object}
     for location in locations:
-        tag = location["tags"]
+        tag = location["tags"] if "tags" in location else []
         set_tag = set(tag)
         # if there is interection between the tags
         if len(set_tag.intersection(tags_to_use)) == 0:
@@ -517,22 +518,37 @@ def log_image(directory, position, images):
 async def update(id: str = Query(...), description: str = Form(...)):
     logger.info(["updateDescription", id, description])
     # Find the document by ID
-    location = image_collection.find_one({"_id": id})
+    location = image_collection.find_one({"_id": ObjectId(id)})
     if not location:
         raise HTTPException(status_code=404, detail="Document not found")
     image_collection.update_one(
-        {"_id": id},
+        {"_id": ObjectId(id)},
         {"$set": {"description": description}}
     )
     logger.info(F"updated description {description}")
     return {"message": "Description updated successfully", "description": description}
 
 
+@app.post("/update_floor", dependencies=[Depends(verify_api_key_or_cookie)])
+async def update_floor(id: str = Query(...), floor: int = Form(...)):
+    logger.info(["updateFloor", id, floor])
+    # Find the document by ID
+    location = image_collection.find_one({"_id": ObjectId(id)})
+    if not location:
+        raise HTTPException(status_code=404, detail="Document not found")
+    image_collection.update_one(
+        {"_id": ObjectId(id)},
+        {"$set": {"floor": floor}}
+    )
+    logger.info(F"updated floor {floor}")
+    return {"message": "Floor updated successfully", "floor": floor}
+
+
 @app.post("/add_tag", dependencies=[Depends(verify_api_key_or_cookie)])
 async def add_tag(id: str = Query(...), tag: str = Form(...)):
     logger.info(["addTag", id, tag])
     # Find the document by ID
-    location = image_collection.find_one({"_id": id})
+    location = image_collection.find_one({"_id": ObjectId(id)})
     if not location:
         raise HTTPException(status_code=404, detail="Document not found")
     # Check if the tag already exists
@@ -544,7 +560,7 @@ async def add_tag(id: str = Query(...), tag: str = Form(...)):
     # Update the document with the new tag
     updated_tags = existing_tags + [tag]
     image_collection.update_one(
-        {"_id": id},
+        {"_id": ObjectId(id)},
         {"$set": {"tags": updated_tags}}
     )
     logger.info(F"updated tags {updated_tags}")
@@ -555,7 +571,7 @@ async def add_tag(id: str = Query(...), tag: str = Form(...)):
 async def clear_tag(id: str = Query(...)):
     logger.info(["clearTag", id])
     # Find the document by ID
-    location = image_collection.find_one({"_id": id})
+    location = image_collection.find_one({"_id": ObjectId(id)})
     if not location:
         raise HTTPException(status_code=404, detail="Document not found")
     # Check if the tag already exists
@@ -563,7 +579,7 @@ async def clear_tag(id: str = Query(...)):
     # Update the document with the new tag
     updated_tags = []
     image_collection.update_one(
-        {"_id": id},
+        {"_id": ObjectId(id)},
         {"$set": {"tags": updated_tags}}
     )
     logger.info(F"updated tags {updated_tags}")

@@ -55,3 +55,13 @@ textarea {
 div.location {
     clear: both;
 }
+
+#navigation {
+    position: fixed;
+    top: 0px;
+    right: 0px;
+    width: 150px;
+    background-color: white;
+    padding: 10px;
+    z-index: 1000;
+}
