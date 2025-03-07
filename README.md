@@ -15,6 +15,10 @@ INITIAL_LOCATION='{"lng": -79.94565, "lat": 40.44335, "rotate": 1, "zoom": 21}'
 # if you want to use web UI, set users and passwords
 USERNAMES=<user1>[,<user2>]...
 PASSWORDS=<pass1>[,<pass2>]...
+
+# if you want to use remote MONGODB or use different db name, change them from default
+MONGODB_HOST=mongodb://mongo:27017/
+MONGODB_NAME=geo_image_db
 ```
 
 ## Web UI
