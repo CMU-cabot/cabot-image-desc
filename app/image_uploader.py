@@ -224,12 +224,12 @@ if __name__ == '__main__':
         if args.dryrun:
             print(f"Dry run: Would post query and insert data for image: {filepath}\n{query}")
         else:
-            print(F"Posting query")
+            print("Posting query")
             response = post_query(query)
             print(F"Received data: {response}")
             data = get_result(response, metadata)
             if args.tags:
                 data['tags'] = args.tags
-            print(F"Insert data into the DB")
+            print("Insert data into the DB")
 
             collection.insert_one(data)

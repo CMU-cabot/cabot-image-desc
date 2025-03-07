@@ -2,7 +2,6 @@ from fastapi import HTTPException, status, Response
 from fastapi import FastAPI, Form, Query, Request, Header, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.security import OAuth2PasswordBearer
 from pathlib import Path
 from pymongo import MongoClient
 from typing import Optional
@@ -48,12 +47,10 @@ API_KEY = os.getenv("API_KEY")
 # Store tokens in memory for simplicity (consider using a database for production)
 tokens = set()
 
+
 def generate_token():
     return secrets.token_hex(16)
 
-def verify_api_key():
-    if x_api_key != API_KEY:
-        raise HTTPException(status_code=403, detail="Invalid API Key")
 
 def verify_api_key_or_cookie(request: Request, x_api_key: Optional[str] = Header(None)):
     if x_api_key and x_api_key == API_KEY:
@@ -66,6 +63,7 @@ def verify_api_key_or_cookie(request: Request, x_api_key: Optional[str] = Header
             headers={"Location": f"/login?next={request.url.path}"}
         )
 
+
 # Load users from environment variables
 users = {}
 usernames = os.getenv("USERNAMES", "").split(",")
@@ -75,6 +73,7 @@ if len(usernames) != len(passwords):
 
 for username, password in zip(usernames, passwords):
     users[username] = password
+
 
 @app.post("/login")
 async def login(request: Request, response: Response, username: str = Form(...), password: str = Form(...), next: Optional[str] = None):
@@ -88,6 +87,7 @@ async def login(request: Request, response: Response, username: str = Form(...),
     response.set_cookie(key="token", value=token, httponly=True, secure=True, path="/")
     return response
 
+
 @app.get("/logout")
 async def logout(response: Response, request: Request):
     token = request.cookies.get("token")
@@ -95,6 +95,7 @@ async def logout(response: Response, request: Request):
         tokens.remove(token)
     response.delete_cookie("token", path="/")
     return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(next: Optional[str] = None):
