@@ -126,29 +126,8 @@ async def login_page(next: Optional[str] = None):
         html_content = html_content.replace('action="/login"', f'action="/login?next={next}"')
     return HTMLResponse(content=html_content)
 
-# Read locations by latitude, longitude, and optional distance
-
-
-def get_locations_by_lat_lng(lat, lng, floor, distance):
-    query = {
-        'location': {
-            '$near': {
-                '$geometry': {
-                    'type': 'Point',
-                    'coordinates': [lng, lat]
-                },
-                '$maxDistance': distance
-            }
-        }
-    }
-    locations = list(image_collection.find(query))
-    for location in locations:
-        location['_id'] = str(location['_id'])
-    return locations
 
 # API to get a location by its ID
-
-
 @app.get('/locations/{location_id}', dependencies=[Depends(verify_api_key_or_cookie)])
 def read_location(location_id: str):
     location = image_collection.find_one({"_id": ObjectId(location_id)})
@@ -157,21 +136,18 @@ def read_location(location_id: str):
     location['_id'] = str(location['_id'])
     return location
 
+
 # API to get locations by latitude, longitude, and optional distance
-
-
 @app.get('/locations', dependencies=[Depends(verify_api_key_or_cookie)])
 def read_locations_by_lat_lng(lat: float = Query(...), lng: float = Query(...), distance: Optional[float] = Query(1000)):
-    locations = get_locations_by_lat_lng(lat, lng, 0, distance)
+    locations = get_description_by_lat_lng(lat, lng, 0, distance)
     if not locations:
         raise HTTPException(status_code=404, detail='No locations found within the given distance')
     return locations
 
 
 # Existing function to get nearby locations
-
-
-def get_description_by_lat_lng(lat, lng, floor, max_count, max_distance):
+def get_description_by_lat_lng(lat, lng, floor, max_distance, max_count=0):
     query = {
         'location': {
             '$near': {
@@ -185,14 +161,16 @@ def get_description_by_lat_lng(lat, lng, floor, max_count, max_distance):
     }
     if floor:
         query['floor'] = floor
-    locations = list(image_collection.find(query).limit(max_count))
+    if max_count:
+        locations = list(image_collection.find(query).limit(max_count))
+    else:
+        locations = list(image_collection.find(query))
     for location in locations:
         location['_id'] = str(location['_id'])
     return locations
 
+
 # Function to get the relative orientation
-
-
 def getOrientation(rotation, direction):
     direction = -direction * math.pi / 180
     diff = direction - rotation
@@ -318,7 +296,7 @@ async def read_description_by_lat_lng(
         max_count: Optional[int] = Query(10),
         max_distance: Optional[float] = Query(100)):
 
-    locations = get_description_by_lat_lng(lat, lng, floor, max_count, max_distance)
+    locations = get_description_by_lat_lng(lat, lng, floor, max_distance, max_count)
     # if not locations:
     #     raise HTTPException(status_code=404, detail='No locations found within the given distance')
 
@@ -366,7 +344,7 @@ async def read_description_by_lat_lng_with_image(
     length_index: Optional[int] = Query(0),  # which is the shortest press to the button UI
     distance_to_travel: Optional[float] = Query(100),  # meter
 ):
-    locations = get_description_by_lat_lng(lat, lng, floor, max_count, max_distance)
+    locations = get_description_by_lat_lng(lat, lng, floor, max_distance, max_count)
     # if not locations:
     #     raise HTTPException(status_code=404, detail='No locations found within the given distance')
 
@@ -438,7 +416,7 @@ async def stop_reason(
     ),  # which is the shortest press to the button UI
     distance_to_travel: Optional[float] = Query(100),  # meter
 ):
-    locations = get_description_by_lat_lng(lat, lng, floor, max_count, max_distance)
+    locations = get_description_by_lat_lng(lat, lng, floor, max_distance, max_count)
     # describe without existing image data
     # if not locations:
     #     raise HTTPException(status_code=404, detail='No locations found within the given distance')
