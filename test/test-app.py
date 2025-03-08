@@ -19,23 +19,22 @@
 # THE SOFTWARE.
 
 import sys
-sys.path.append('/app')  # this should not be changed, this is a path in the docker container
-
 import logging
 import pytest
 import os
 import json
 from pymongo import MongoClient
 from bson import ObjectId
+from fastapi.testclient import TestClient
 
+sys.path.append('/app')  # this should not be changed, this is a path in the docker container
 os.environ["API_KEY"] = "test_api_key"
 os.environ["USERNAMES"] = "test_user"
 os.environ["PASSWORDS"] = "test_password"
 os.environ["MONGODB_HOST"] = "mongodb://mongo-test:27017/"
 os.environ["OPENAI_API_KEY"] = "__DUMMY_OPENAI_API_KEY__"
 
-from fastapi.testclient import TestClient
-from server.app import app, generate_token, tokens
+from server.app import app   # noqa: E402, needs to be loaded after the environment variables are set
 
 client = TestClient(app, follow_redirects=False)
 

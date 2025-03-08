@@ -119,16 +119,15 @@ services:
     extends: image_desc-test
     profiles: !override ["lint"]
     volumes:
-      - ./test:/test
       - ./app:/app
-      - ./logs:/app/logs
-      - ./static:/static
-    working_dir: /app
+      - ./test:/test
+    working_dir: /
     command:
       - bash
       - -c
       - |
-        flake8 . --count --show-source --max-line-length=200 --statistics
+        flake8 /app --count --show-source --max-line-length=200 --statistics && \
+        flake8 /test --count --show-source --max-line-length=200 --statistics
 
 networks:
   chat_dic_network:
