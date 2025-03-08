@@ -38,24 +38,27 @@ function help {
     echo ""
     echo "-h           show this help"
     echo "-d           development launch"
-    echo "-t           run test (development)"
+    echo "-t           run test"
+    echo "-l           run lint test"
 }
 
-development=0
-test=0
+profile=prod
 dcfile=docker-compose.yaml
 
-while getopts "hdt" arg; do
+while getopts "hdtl" arg; do
     case $arg in
     h)
         help
         exit
         ;;
     d)
-        development=1
+        profile=dev
         ;;
     t)
-        test=1
+        profile=test
+        ;;
+    l)
+        profile=lint
         ;;
     esac
 done
@@ -66,18 +69,11 @@ log_name=${log_prefix}_`date +%Y-%m-%d-%H-%M-%S`
 
 source $scriptdir/.env
 
-if [ -n "$CABOT_LAUNCH_DEV_PROFILE" ]; then
-    development=$CABOT_LAUNCH_DEV_PROFILE
+if [[ -n "$CABOT_LAUNCH_DEV_PROFILE" ]] && [[ $profile = "prod" ]];  then
+    profile=dev
 fi
 
-profile="--profile prod"
-if [[ $development -eq 1 ]]; then
-    profile="--profile dev"
-fi
-if [[ $test -eq 1 ]]; then
-    profile="--profile test"
-fi
-com="docker compose -f $dcfile $profile up 2>&1 | tee logs/$log_name.log"
+com="docker compose -f $dcfile --profile ${profile} up 2>&1 | tee logs/$log_name.log"
 
 echo $com
 eval $com

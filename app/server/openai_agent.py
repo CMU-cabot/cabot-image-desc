@@ -240,7 +240,7 @@ class DummyOpenAI:
                 class DictToObject:
                     def __init__(self, **entries):
                         self.__dict__.update(entries)
-                        
+
                 return DictToObject(**{
                     "choices": [
                         DictToObject(**{

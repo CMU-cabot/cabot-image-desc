@@ -109,8 +109,26 @@ services:
       - ./static:/static
     working_dir: /
     command:
-      - pytest
-      - /test/test-app.py
+      - bash
+      - -c
+      - |
+        pytest /test/test-app.py
+
+
+  image_desc-lint:
+    extends: image_desc-test
+    profiles: !override ["lint"]
+    volumes:
+      - ./test:/test
+      - ./app:/app
+      - ./logs:/app/logs
+      - ./static:/static
+    working_dir: /app
+    command:
+      - bash
+      - -c
+      - |
+        flake8 . --count --show-source --max-line-length=200 --statistics
 
 networks:
   chat_dic_network:

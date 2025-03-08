@@ -9,4 +9,4 @@ RUN mkdir -p /static_js_lib/ && curl https://unpkg.com/ol@7.3.0/dist/ol.js -o /s
 
 WORKDIR /app
 
-CMD ["uvicorn", "sever.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "8000"]
