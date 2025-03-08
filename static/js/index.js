@@ -206,3 +206,21 @@ function showFeature(feature) {
     };
     showLocation(location, popup);
 }
+
+function showDescription(result, container) {
+    const description = result.description;
+    const elapsed_time = result.elapsed_time;
+    var images = "";
+    // sort from left (+pi) to right (-pi)
+    var locations = result.locations.sort((a, b) => {
+        return b.relative_direction - a.relative_direction;
+    });
+    locations.forEach(location => {
+        images += `<img src="${location.image}" width="150">`
+    });
+    container.innerHTML = `
+        ${images} <br>
+        <strong>Description:</strong> ${description} <br>
+        <strong>Elapsed Time:</strong> ${elapsed_time} <br>
+    `
+}
