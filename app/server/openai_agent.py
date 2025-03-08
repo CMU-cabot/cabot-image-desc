@@ -232,12 +232,46 @@ def construct_prompt_for_stop_reason(
     return prompt
 
 
+class DummyOpenAI:
+    class Chat:
+        class Completions:
+            async def create(self, model, messages, max_tokens):
+                # 辞書型オブジェクトのキーをプロパティとしてアクセスできるようにする
+                class DictToObject:
+                    def __init__(self, **entries):
+                        self.__dict__.update(entries)
+                        
+                return DictToObject(**{
+                    "choices": [
+                        DictToObject(**{
+                            "message": DictToObject(**{
+                                "content": "This is a dummy response."
+                            })
+                        })
+                    ]
+                })
+
+        def __init__(self):
+            self.completions = DummyOpenAI.Chat.Completions()
+
+    class Beta:
+        def __init__(self):
+            self.chat = DummyOpenAI.Chat()
+
+    def __init__(self):
+        self.chat = DummyOpenAI.Chat()
+        self.beta = DummyOpenAI.Beta()
+
+
 class GPTAgent:
     def __init__(self, model="gpt-4o"):
         self.api_key = os.environ.get('OPENAI_API_KEY')
         if not self.api_key:
             raise ValueError("Please set the OPENAI_API_KEY environment variable.")
-        self.client = AsyncOpenAI()
+        if self.api_key == "__DUMMY_OPENAI_API_KEY__":
+            self.client = DummyOpenAI()
+        else:
+            self.client = AsyncOpenAI()
         self.model = model
         self.past_descriptions = []
 

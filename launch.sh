@@ -38,12 +38,14 @@ function help {
     echo ""
     echo "-h           show this help"
     echo "-d           development launch"
+    echo "-t           run test (development)"
 }
 
 development=0
+test=0
 dcfile=docker-compose.yaml
 
-while getopts "hd" arg; do
+while getopts "hdt" arg; do
     case $arg in
     h)
         help
@@ -51,6 +53,9 @@ while getopts "hd" arg; do
         ;;
     d)
         development=1
+        ;;
+    t)
+        test=1
         ;;
     esac
 done
@@ -68,6 +73,9 @@ fi
 profile="--profile prod"
 if [[ $development -eq 1 ]]; then
     profile="--profile dev"
+fi
+if [[ $test -eq 1 ]]; then
+    profile="--profile test"
 fi
 com="docker compose -f $dcfile $profile up 2>&1 | tee logs/$log_name.log"
 

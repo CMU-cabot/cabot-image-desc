@@ -26,8 +26,8 @@ from pathlib import Path
 from pymongo import MongoClient
 from typing import Optional
 from pydantic import BaseModel
-from openai_agent import GPTAgent, construct_prompt_for_image_description
-from openai_agent import construct_prompt_for_stop_reason
+from .openai_agent import GPTAgent, construct_prompt_for_image_description
+from .openai_agent import construct_prompt_for_stop_reason
 from bson import ObjectId
 import os
 import math
@@ -74,6 +74,7 @@ def generate_token():
 
 
 def verify_api_key_or_cookie(request: Request, x_api_key: Optional[str] = Header(None)):
+    logger.info("verify_api_key_or_cookie")
     if x_api_key and x_api_key == API_KEY:
         return
     token = request.cookies.get("token")
@@ -98,6 +99,7 @@ for username, password in zip(usernames, passwords):
 
 @app.post("/login")
 async def login(request: Request, response: Response, username: str = Form(...), password: str = Form(...), next: Optional[str] = None):
+    logger.info("login post")
     correct_password = users.get(username)
     if not correct_password or not secrets.compare_digest(correct_password, password):
         return HTMLResponse(content="Invalid username or password", status_code=status.HTTP_401_UNAUTHORIZED)
@@ -120,6 +122,7 @@ async def logout(response: Response, request: Request):
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(next: Optional[str] = None):
+    logger.info("login get")
     login_path = Path("/static/login.html")
     html_content = login_path.read_text()
     if next:
@@ -296,6 +299,7 @@ async def read_description_by_lat_lng(
         max_count: Optional[int] = Query(10),
         max_distance: Optional[float] = Query(100)):
 
+    logger.info("description get")
     locations = get_description_by_lat_lng(lat, lng, floor, max_distance, max_count)
     # if not locations:
     #     raise HTTPException(status_code=404, detail='No locations found within the given distance')
@@ -344,6 +348,7 @@ async def read_description_by_lat_lng_with_image(
     length_index: Optional[int] = Query(0),  # which is the shortest press to the button UI
     distance_to_travel: Optional[float] = Query(100),  # meter
 ):
+    logger.info("description_with_live_image post")
     locations = get_description_by_lat_lng(lat, lng, floor, max_distance, max_count)
     # if not locations:
     #     raise HTTPException(status_code=404, detail='No locations found within the given distance')
@@ -416,6 +421,7 @@ async def stop_reason(
     ),  # which is the shortest press to the button UI
     distance_to_travel: Optional[float] = Query(100),  # meter
 ):
+    logger.info("stop_reason post")
     locations = get_description_by_lat_lng(lat, lng, floor, max_distance, max_count)
     # describe without existing image data
     # if not locations:
@@ -593,11 +599,13 @@ async def clear_tag(id: str = Query(...)):
 
 @app.get("/", response_class=HTMLResponse, dependencies=[Depends(verify_api_key_or_cookie)])
 async def read_root():
+    logger.info("root get")
     return await read_index()
 
 
 @app.get("/index.html", response_class=HTMLResponse, dependencies=[Depends(verify_api_key_or_cookie)])
 async def read_index():
+    logger.info("index get")
     index_path = Path("/static/index.html")
     initial_location = os.getenv("INITIAL_LOCATION", '{"lat": 35.62414166666667, "lng": 139.77542222222223, "floor": 1}')
     html_content = index_path.read_text().replace("INITIAL_LOCATION_PLACEHOLDER", initial_location)
@@ -606,6 +614,7 @@ async def read_index():
 
 @app.get("/list.html", response_class=HTMLResponse, dependencies=[Depends(verify_api_key_or_cookie)])
 async def read_list():
+    logger.info("list get")
     index_path = Path("/static/list.html")
     initial_location = os.getenv("INITIAL_LOCATION", '{"lat": 35.62414166666667, "lng": 139.77542222222223, "floor": 1}')
     html_content = index_path.read_text().replace("INITIAL_LOCATION_PLACEHOLDER", initial_location)

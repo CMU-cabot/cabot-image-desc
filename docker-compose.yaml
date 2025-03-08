@@ -4,6 +4,9 @@ services:
     container_name: geo_mdb
     volumes:
       - image_desc_mongodb_data:/data/db
+    profiles:
+      - dev
+      - prod
     networks:
       - chat_dic_network
 
@@ -48,11 +51,12 @@ services:
     extends: image_desc
     volumes:
       - ./app:/app
+      - ./logs:/app/logs
       - ./static:/static
       - ./images:/app/images
     profiles:
       - dev
-    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    command: ["uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
   image_desc-upload-prod:
     extends: image_desc
@@ -71,10 +75,51 @@ services:
       - upload
     command: bash
 
+  mongo-test:
+    image: mongo:4.4.25
+    container_name: geo_mdb-test
+    profiles:
+      - test-db
+    volumes:
+      - image_desc_mongodb_data-test:/data/db
+    networks:
+      - chat_dic_network-test
+
+  image_desc-test:
+    image: cmucal/cabot-image_desc:${CABOT_LAUNCH_IMAGE_TAG:-latest}
+    build:
+      context: ./docker
+      additional_contexts:
+        src: ./
+      x-bake:
+        tags:
+          - ${REGISTRY:-cmucal}/cabot-image_desc
+        platforms:
+          - linux/amd64
+        output:
+          - type=registry
+    networks:
+      - chat_dic_network-test
+    profiles:
+      - test
+    volumes:
+      - ./test:/test
+      - ./app:/app
+      - ./logs:/app/logs
+      - ./static:/static
+    working_dir: /
+    command:
+      - pytest
+      - /test/test-app.py
+
 networks:
   chat_dic_network:
     name: chat_dic_network
+  chat_dic_network-test:
+    name: chat_dic_network-test
 
 volumes:
   image_desc_mongodb_data:
     name: image_desc_mongodb_data
+  image_desc_mongodb_data-test:
+    name: image_desc_mongodb_data-test
