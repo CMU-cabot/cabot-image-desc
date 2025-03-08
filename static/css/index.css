@@ -64,4 +64,5 @@ div.location {
     background-color: white;
     padding: 10px;
     z-index: 1000;
+    line-height: 2em;
 }

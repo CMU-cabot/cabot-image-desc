@@ -42,7 +42,7 @@ function getMarkerSrc(fill = "#CCCCCC", stroke = "#666666") {
 }
 
 
-function loadDescriptionAt(lat, lng, rotation, max_count=10, max_distance=100) {
+function loadDescriptionAt(lat, lng, rotation, max_count = 10, max_distance = 100) {
     fetch(`/description?lat=${lat}&lng=${lng}&rotation=${rotation}&max_count=${max_count}&max_distance=${max_distance}`)
         .then(response => response.json())
         .then(data => {
@@ -58,11 +58,11 @@ function loadDescriptionAt(lat, lng, rotation, max_count=10, max_distance=100) {
                 fill = "#666666"
                 stroke = "#000000"
                 if (location.relative_direction) {
-                    if (Math.abs(location.relative_direction) < Math.PI/4) {
+                    if (Math.abs(location.relative_direction) < Math.PI / 4) {
                         fill = "#00CC00";
                         stroke = "#006600"
                     }
-                    else if (Math.abs(location.relative_direction) < Math.PI/4*3) {
+                    else if (Math.abs(location.relative_direction) < Math.PI / 4 * 3) {
                         if (location.relative_direction > 0) {
                             fill = "#CC0000";
                             stroke = "#660000"
@@ -75,16 +75,16 @@ function loadDescriptionAt(lat, lng, rotation, max_count=10, max_distance=100) {
                 }
 
                 var markerStyle = new ol.style.Style({
-                    'image' : new ol.style.Icon({
-                        'src' : getMarkerSrc(fill, stroke),
-                        'rotation' : location.direction * Math.PI / 180.0,
-                        'rotateWithView' : true,
-                        'anchor' : [ 0.5, 0.5 ],
-                        'anchorXUnits' : 'fraction',
-                        'anchorYUnits' : 'fraction',
-                        'imgSize' : [ 44, 44 ]
+                    'image': new ol.style.Icon({
+                        'src': getMarkerSrc(fill, stroke),
+                        'rotation': location.direction * Math.PI / 180.0,
+                        'rotateWithView': true,
+                        'anchor': [0.5, 0.5],
+                        'anchorXUnits': 'fraction',
+                        'anchorYUnits': 'fraction',
+                        'imgSize': [44, 44]
                     }),
-                    'zIndex' : -1
+                    'zIndex': -1
                 });
                 locationMarker.setStyle(markerStyle);
                 features.push(locationMarker);
@@ -112,39 +112,81 @@ function loadDescription() {
 function _loadImages() {
     const center = ol.proj.toLonLat(map.getView().getCenter());
     console.log(["loadImages", center]);
-    
-    loadImagesAt(center[1], center[0], (data) => {
-        var features = [];
-        data.forEach(location => {
-            var coords = ol.proj.fromLonLat([location.location.coordinates[0], location.location.coordinates[1]]);
-            var locationMarker = new ol.Feature({
-                geometry: new ol.geom.Point(coords),
-            });
 
-            var markerStyle = new ol.style.Style({
-                'image' : new ol.style.Icon({
-                    'src' : getMarkerSrc(),
-                    'rotation' : location.direction * Math.PI / 180.0,
-                    'rotateWithView' : true,
-                    'anchor' : [ 0.5, 0.5 ],
-                    'anchorXUnits' : 'fraction',
-                    'anchorYUnits' : 'fraction',
-                    'imgSize' : [ 44, 44 ]
-                }),
-                'zIndex' : -1
-            });
-            locationMarker.setStyle(markerStyle);
-            features.push(locationMarker);
-
-            // Store additional location details in the feature
-            for (key in location) {
-                locationMarker.set(key, location[key]);
-            }
-        });
-        imageLayer.setSource(new ol.source.Vector({
-            features: features
-        }));
+    loadImagesAt(center[1], center[0], (data, floors) => {
+        showFloorList(floors);
+        showFeatures(data, selectedFloor);
     });
+}
+
+var selectedFloor = "all";
+
+function showFeatures(data, floor) {
+    var features = [];
+    data.forEach(location => {
+        if (location.floor != floor && floor != "all") {
+            return;
+        }
+        var coords = ol.proj.fromLonLat([location.location.coordinates[0], location.location.coordinates[1]]);
+        var locationMarker = new ol.Feature({
+            geometry: new ol.geom.Point(coords),
+        });
+
+        var markerStyle = new ol.style.Style({
+            'image': new ol.style.Icon({
+                'src': getMarkerSrc(),
+                'rotation': location.direction * Math.PI / 180.0,
+                'rotateWithView': true,
+                'anchor': [0.5, 0.5],
+                'anchorXUnits': 'fraction',
+                'anchorYUnits': 'fraction',
+                'imgSize': [44, 44]
+            }),
+            'zIndex': -1
+        });
+        locationMarker.setStyle(markerStyle);
+        features.push(locationMarker);
+
+        // Store additional location details in the feature
+        for (key in location) {
+            locationMarker.set(key, location[key]);
+        }
+    });
+    imageLayer.setSource(new ol.source.Vector({
+        features: features
+    }));
+}
+
+function showFloorList(floors) {
+    floorList = Object.keys(floors).sort();
+    floorList.forEach(floor => {
+        var floorDiv = document.getElementById(`floor-${floor}`);
+        if (floorDiv == null) {
+            floorDiv = document.createElement("button");
+            floorDiv.setAttribute("id", `floor-${floor}`);
+            floorDiv.classList.add("floor");
+            floorDiv.innerHTML = `Floor ${floor}`
+            floorDiv.addEventListener("click", function () {
+                selectedFloor = floor;
+                _loadImages();
+            });
+            navDiv.appendChild(document.createElement("br"));
+            navDiv.appendChild(floorDiv);
+        }
+    });
+    var floorDiv = document.getElementById("floor-all");
+    if (floorDiv == null) {
+        floorDiv = document.createElement("button");
+        floorDiv.setAttribute("id", "floor-all");
+        floorDiv.classList.add("floor");
+        floorDiv.innerHTML = "Floor All"
+        floorDiv.addEventListener("click", function () {
+            selectedFloor = "all";
+            _loadImages();
+        });
+        navDiv.appendChild(document.createElement("br"));
+        navDiv.appendChild(floorDiv);
+    }
 }
 
 // Load locations when the map is moved
@@ -152,16 +194,17 @@ map.on('moveend', _loadImages);
 window.onload = _loadImages;
 
 var mapDiv = document.getElementById("map");
+var navDiv = document.getElementById("navigation");
 var marker = document.createElement("div");
 marker.setAttribute("id", "marker");
 marker.setAttribute("title", "Click to generate description")
-marker.addEventListener("mouseenter", function() {
+marker.addEventListener("mouseenter", function () {
     marker.classList.add("hover")
 });
-marker.addEventListener("mouseleave", function() {
+marker.addEventListener("mouseleave", function () {
     marker.classList.remove("hover")
 });
-marker.addEventListener("click", function() {
+marker.addEventListener("click", function () {
     loadDescription();
 });
 mapDiv.insertBefore(marker, mapDiv.firstChild);

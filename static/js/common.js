@@ -2,11 +2,21 @@
 const initialLocation = INITIAL_LOCATION;
 const defaultDistance = initialLocation.distance ?? 100;
 // Function to query /locations with lat/lng and plot the data
-function loadImagesAt(lat, lng, callback, distance=defaultDistance) {
+function loadImagesAt(lat, lng, callback, distance = defaultDistance) {
     fetch(`/locations?lat=${lat}&lng=${lng}&distance=${distance}`) // Query with distance param of 1000 meters
         .then(response => response.json())
         .then(data => {
-            callback(data);
+            // list all floor in location, "unknown" if location.floor is undefined
+            var floors = {};
+            data.forEach(location => {
+                key = location.floor ?? "unknown"
+                if (floors[key]) {
+                    floors[key].push(location);
+                } else {
+                    floors[key] = [location];
+                }
+            });
+            callback(data, floors);
         })
         .catch(error => console.error('Error fetching locations:', error));
 }
@@ -64,7 +74,7 @@ function showLocation(location, div) {
             <input type="submit" value="Update">
         </form>
     `;
-    
+
     // Display the information in the popup
     div.innerHTML = `
         <img src="${image}" alt="Image" style="max-width: 200px; max-height: 200px; float: left; margin: 0px 10px 10px 0px;">
@@ -76,7 +86,7 @@ function showLocation(location, div) {
     `
     if (relative_direction) {
         div.innerHTML += `
-            <strong>Relative Direction:</strong> ${(relative_direction/Math.PI*180).toFixed(0)} deg (${relative_direction.toFixed(2)} rad, counter clockwise) <br>
+            <strong>Relative Direction:</strong> ${(relative_direction / Math.PI * 180).toFixed(0)} deg (${relative_direction.toFixed(2)} rad, counter clockwise) <br>
         `
     }
     if (relative_coordinates) {
@@ -85,7 +95,7 @@ function showLocation(location, div) {
         `
     }
 
-    document.getElementById(`clearTag-${id}`).addEventListener("submit", async function(event) {
+    document.getElementById(`clearTag-${id}`).addEventListener("submit", async function (event) {
         event.preventDefault(); // Prevent form from reloading the page
         const formData = new FormData(event.target);
         const id = formData.get("id");
@@ -104,7 +114,7 @@ function showLocation(location, div) {
             console.error("Error:", error);
         }
     });
-    document.getElementById(`addTag-${id}`).addEventListener("submit", async function(event) {
+    document.getElementById(`addTag-${id}`).addEventListener("submit", async function (event) {
         event.preventDefault(); // Prevent form from reloading the page
         const formData = new FormData(event.target);
         const id = formData.get("id");
@@ -128,7 +138,7 @@ function showLocation(location, div) {
             console.error("Error:", error);
         }
     });
-    document.getElementById(`descriptionEdit-${id}`).addEventListener("submit", async function(event) {
+    document.getElementById(`descriptionEdit-${id}`).addEventListener("submit", async function (event) {
         event.preventDefault(); // Prevent form from reloading the page
         const formData = new FormData(event.target);
         const id = formData.get("id");
@@ -148,7 +158,7 @@ function showLocation(location, div) {
             console.error("Error:", error);
         }
     });
-    document.getElementById(`floorEdit-${id}`).addEventListener("submit", async function(event) {
+    document.getElementById(`floorEdit-${id}`).addEventListener("submit", async function (event) {
         event.preventDefault(); // Prevent form from reloading the page
         const formData = new FormData(event.target);
         const id = formData.get("id");
