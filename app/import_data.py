@@ -31,12 +31,15 @@ if __name__ == '__main__':
             update = {}
             for key in entry.keys():
                 if key not in location or location[key] != entry[key]:
+                    if key == "_id":
+                        continue
                     update[key] = entry[key]
             collection.update_one(
-                {"_id": id},
+                {"_id": ObjectId(id)},
                 {"$set": update}
             )
             print(f"{id} updated {update}")
         else:
             print(f"{id} inserted")
+            entry["_id"] = ObjectId(id)
             collection.insert_one(entry)
