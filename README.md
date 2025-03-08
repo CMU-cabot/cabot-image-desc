@@ -52,7 +52,10 @@ MONGODB_NAME=geo_image_db
 ### development
 
 ```
-./launch.sh -d
+./launch.sh -d   # launch server with dev env (reload code when changed)
+./launch.sh -t   # launch pytest with dummy OpenAI APIs
+./launch.sh -o   # launch pytest with actual OpenAI APIs
+./launch.sh -l   # launch lint test
 ```
 
 ## manage images

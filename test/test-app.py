@@ -32,7 +32,7 @@ os.environ["API_KEY"] = "test_api_key"
 os.environ["USERNAMES"] = "test_user"
 os.environ["PASSWORDS"] = "test_password"
 os.environ["MONGODB_HOST"] = "mongodb://mongo-test:27017/"
-os.environ["OPENAI_API_KEY"] = "__DUMMY_OPENAI_API_KEY__"
+os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY", "__DUMMY_OPENAI_API_KEY__")
 
 from server.app import app   # noqa: E402, needs to be loaded after the environment variables are set
 

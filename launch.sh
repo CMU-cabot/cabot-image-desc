@@ -38,14 +38,15 @@ function help {
     echo ""
     echo "-h           show this help"
     echo "-d           development launch"
-    echo "-t           run test"
+    echo "-t           run test with mock OpenAI APIs"
+    echo "-o           run test with actual OpenAI APIs"
     echo "-l           run lint test"
 }
 
 profile=prod
 dcfile=docker-compose.yaml
 
-while getopts "hdtl" arg; do
+while getopts "hdtol" arg; do
     case $arg in
     h)
         help
@@ -56,6 +57,9 @@ while getopts "hdtl" arg; do
         ;;
     t)
         profile=test
+        ;;
+    o)
+        profile=openai
         ;;
     l)
         profile=lint
