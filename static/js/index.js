@@ -43,7 +43,7 @@ function getMarkerSrc(fill = "#CCCCCC", stroke = "#666666") {
 
 
 function loadDescriptionAt(lat, lng, rotation, max_count = 10, max_distance = 100) {
-    fetch(`/description?lat=${lat}&lng=${lng}&rotation=${rotation}&max_count=${max_count}&max_distance=${max_distance}`)
+    fetch(`/description?lat=${lat}&lng=${lng}&floor=${selectedFloor}&rotation=${rotation}&max_count=${max_count}&max_distance=${max_distance}`)
         .then(response => response.json())
         .then(data => {
             console.log(data)
@@ -119,12 +119,12 @@ function _loadImages() {
     });
 }
 
-var selectedFloor = "all";
+var selectedFloor = 0;
 
 function showFeatures(data, floor) {
     var features = [];
     data.forEach(location => {
-        if (location.floor != floor && floor != "all") {
+        if (location.floor != floor && floor != 0) {
             return;
         }
         var coords = ol.proj.fromLonLat([location.location.coordinates[0], location.location.coordinates[1]]);
@@ -181,7 +181,7 @@ function showFloorList(floors) {
         floorDiv.classList.add("floor");
         floorDiv.innerHTML = "Floor All"
         floorDiv.addEventListener("click", function () {
-            selectedFloor = "all";
+            selectedFloor = 0;
             _loadImages();
         });
         navDiv.appendChild(document.createElement("br"));

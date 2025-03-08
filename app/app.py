@@ -109,7 +109,7 @@ async def login_page(next: Optional[str] = None):
 # Read locations by latitude, longitude, and optional distance
 
 
-def get_locations_by_lat_lng(lat, lng, distance):
+def get_locations_by_lat_lng(lat, lng, floor, distance):
     query = {
         'location': {
             '$near': {
@@ -142,7 +142,7 @@ def read_location(location_id: str):
 
 @app.get('/locations', dependencies=[Depends(verify_api_key_or_cookie)])
 def read_locations_by_lat_lng(lat: float = Query(...), lng: float = Query(...), distance: Optional[float] = Query(1000)):
-    locations = get_locations_by_lat_lng(lat, lng, distance)
+    locations = get_locations_by_lat_lng(lat, lng, 0, distance)
     if not locations:
         raise HTTPException(status_code=404, detail='No locations found within the given distance')
     return locations
@@ -151,7 +151,7 @@ def read_locations_by_lat_lng(lat: float = Query(...), lng: float = Query(...), 
 # Existing function to get nearby locations
 
 
-def get_description_by_lat_lng(lat, lng, max_count, max_distance):
+def get_description_by_lat_lng(lat, lng, floor, max_count, max_distance):
     query = {
         'location': {
             '$near': {
@@ -163,6 +163,8 @@ def get_description_by_lat_lng(lat, lng, max_count, max_distance):
             }
         }
     }
+    if floor:
+        query['floor'] = floor
     locations = list(image_collection.find(query).limit(max_count))
     for location in locations:
         location['_id'] = str(location['_id'])
@@ -291,11 +293,12 @@ def preprocess_descriptions(locations, rotation, lat, lng, max_distance):
 async def read_description_by_lat_lng(
         lat: float = Query(...),
         lng: float = Query(...),
+        floor: int = Query(0),
         rotation: float = Query(...),
         max_count: Optional[int] = Query(10),
         max_distance: Optional[float] = Query(100)):
 
-    locations = get_description_by_lat_lng(lat, lng, max_count, max_distance)
+    locations = get_description_by_lat_lng(lat, lng, floor, max_count, max_distance)
     # if not locations:
     #     raise HTTPException(status_code=404, detail='No locations found within the given distance')
 
@@ -336,13 +339,14 @@ async def read_description_by_lat_lng_with_image(
     request: Request,
     lat: float = Query(...),
     lng: float = Query(...),
+    floor: int = Query(0),
     rotation: float = Query(...),
     max_count: Optional[int] = Query(10),
     max_distance: Optional[float] = Query(15),
     length_index: Optional[int] = Query(0),  # which is the shortest press to the button UI
     distance_to_travel: Optional[float] = Query(100),  # meter
 ):
-    locations = get_description_by_lat_lng(lat, lng, max_count, max_distance)
+    locations = get_description_by_lat_lng(lat, lng, floor, max_count, max_distance)
     # if not locations:
     #     raise HTTPException(status_code=404, detail='No locations found within the given distance')
 
@@ -405,6 +409,7 @@ async def stop_reason(
     request: Request,
     lat: float = Query(...),
     lng: float = Query(...),
+    floor: int = Query(0),
     rotation: float = Query(...),
     max_count: Optional[int] = Query(10),
     max_distance: Optional[float] = Query(100),
@@ -413,7 +418,7 @@ async def stop_reason(
     ),  # which is the shortest press to the button UI
     distance_to_travel: Optional[float] = Query(100),  # meter
 ):
-    locations = get_description_by_lat_lng(lat, lng, max_count, max_distance)
+    locations = get_description_by_lat_lng(lat, lng, floor, max_count, max_distance)
     # describe without existing image data
     # if not locations:
     #     raise HTTPException(status_code=404, detail='No locations found within the given distance')
