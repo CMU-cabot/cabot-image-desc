@@ -604,7 +604,8 @@ async def read_index():
 @app.get("/list.html", response_class=HTMLResponse, dependencies=[Depends(verify_api_key_or_cookie)])
 async def read_list():
     index_path = Path("/static/list.html")
-    html_content = index_path.read_text()
+    initial_location = os.getenv("INITIAL_LOCATION", '{"lat": 35.62414166666667, "lng": 139.77542222222223, "floor": 1}')
+    html_content = index_path.read_text().replace("INITIAL_LOCATION_PLACEHOLDER", initial_location)
     return HTMLResponse(content=html_content)
 
 
