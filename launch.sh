@@ -49,7 +49,7 @@ profile="--profile prod"
 if [[ $development -eq 1 ]]; then
     profile="--profile dev"
 fi
-com="docker compose -f $dcfile $profile up 2>&1 | tee log/$log_name.log"
+com="docker compose -f $dcfile $profile up 2>&1 | tee logs/$log_name.log"
 
 echo $com
 eval $com
