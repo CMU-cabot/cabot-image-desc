@@ -252,7 +252,7 @@ class DummyOpenAI:
                         else:
                             setattr(self, key, value)
 
-                def json(self):
+                def model_dump_json(self):
                     return json.dumps(self.obj, ensure_ascii=False)
 
             async def parse(self, model, messages, max_tokens, response_format):

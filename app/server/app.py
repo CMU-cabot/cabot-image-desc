@@ -594,9 +594,8 @@ async def clear_tag(id: str = Query(...)):
     logger.info(F"updated tags {updated_tags}")
     return {"message": "Tag cleared successfully"}
 
+
 # Serve index.html on accessing root path
-
-
 @app.get("/", response_class=HTMLResponse, dependencies=[Depends(verify_api_key_or_cookie)])
 async def read_root():
     logger.info("root get")
