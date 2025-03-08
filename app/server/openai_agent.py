@@ -25,6 +25,7 @@ import os
 import json
 import re
 
+
 DESCRIPTION_PROMPT_TEMPLATE = """
 # 指示
 与えられた画像について説明してください。
@@ -235,19 +236,50 @@ def construct_prompt_for_stop_reason(
 class DummyOpenAI:
     class Chat:
         class Completions:
-            async def create(self, model, messages, max_tokens):
-                # 辞書型オブジェクトのキーをプロパティとしてアクセスできるようにする
-                class DictToObject:
-                    def __init__(self, **entries):
-                        self.__dict__.update(entries)
+            # 辞書型オブジェクトのキーをプロパティとしてアクセスできるようにし、再帰的に変換するクラス
+            class DictToObject:
+                def __init__(self, obj):
+                    self.obj = obj
+                    for key, value in obj.items():
+                        if isinstance(value, dict):
+                            setattr(self, key, DummyOpenAI.Chat.Completions.DictToObject(value))
+                        elif isinstance(value, list):
+                            setattr(
+                                self,
+                                key,
+                                [DummyOpenAI.Chat.Completions.DictToObject(item) if isinstance(item, dict) else item for item in value],
+                            )
+                        else:
+                            setattr(self, key, value)
 
-                return DictToObject(**{
+                def json(self):
+                    return json.dumps(self.obj, ensure_ascii=False)
+
+            async def parse(self, model, messages, max_tokens, response_format):
+                result = DummyOpenAI.Chat.Completions.DictToObject({
                     "choices": [
-                        DictToObject(**{
-                            "message": DictToObject(**{
+                        {
+                            "message": {
+                                "content": "This is a dummy response.",
+                            }
+                        }
+                    ]
+                })
+                obj = {}
+                for field in response_format.model_fields.keys():
+                    obj[field] = "dummy_value"
+                parsed_obj = response_format.model_validate(obj)
+                result.choices[0].message.parsed = parsed_obj
+                return result
+
+            async def create(self, model, messages, max_tokens):
+                return DummyOpenAI.Chat.Completions.DictToObject({
+                    "choices": [
+                        {
+                            "message": {
                                 "content": "This is a dummy response."
-                            })
-                        })
+                            }
+                        }
                     ]
                 })
 

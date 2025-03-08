@@ -398,7 +398,7 @@ async def read_description_by_lat_lng_with_image(
     log_json(directory=date, name="openai-query", data=query)
     log_json(directory=date, name="openai-prompt", data=prompt)
     log_json(directory=date, name="locations", data=locations)
-    log_json(directory=date, name="openai-response", data=json.loads(original_result.json()))
+    log_json(directory=date, name="openai-response", data=json.loads(original_result.model_dump_json()))
 
     return {
         'locations': locations,
@@ -487,7 +487,7 @@ async def stop_reason(
     log_json(directory=date, name="openai-query", data=query)
     log_text(directory=date, name="openai-prompt", data=prompt)
     log_json(
-        directory=date, name="openai-response", data=json.loads(original_result.json())
+        directory=date, name="openai-response", data=json.loads(original_result.model_dump_json())
     )
     log_image(directory=date, position="front", images=temp)
 

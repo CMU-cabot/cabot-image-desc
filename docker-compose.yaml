@@ -98,6 +98,8 @@ services:
           - linux/amd64
         output:
           - type=registry
+    environment:
+      - VERBOSE_OUTPUT=${VERBOSE_OUTPUT:-false}
     networks:
       - chat_dic_network-test
     profiles:
@@ -112,15 +114,17 @@ services:
       - bash
       - -c
       - |
-        pytest /test/test-app.py -vvv --log-cli-level=INFO
-
+        if [ "${VERBOSE_OUTPUT}" = "true" ]; then
+          pytest /test/test-app.py -vvv --log-cli-level=INFO;
+        else
+          pytest /test/test-app.py;
+        fi
 
   image_desc-test-openai:
     extends: image_desc-test
     environment:
       - OPENAI_API_KEY
     profiles: !override ["openai"]
-
 
   image_desc-lint:
     extends: image_desc-test

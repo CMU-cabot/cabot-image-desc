@@ -41,12 +41,13 @@ function help {
     echo "-t           run test with mock OpenAI APIs"
     echo "-o           run test with actual OpenAI APIs"
     echo "-l           run lint test"
+    echo "-v           verbose mode"
 }
 
 profile=prod
 dcfile=docker-compose.yaml
 
-while getopts "hdtol" arg; do
+while getopts "hdtolv" arg; do
     case $arg in
     h)
         help
@@ -63,6 +64,14 @@ while getopts "hdtol" arg; do
         ;;
     l)
         profile=lint
+        ;;
+    v)
+        export VERBOSE_OUTPUT=true
+        ;;
+    *)
+        echo "Invalid option: -$OPTARG" >&2
+        help
+        exit 1
         ;;
     esac
 done
