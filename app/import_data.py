@@ -4,6 +4,7 @@ import os
 import sys
 import json
 from pymongo import MongoClient
+from bson import ObjectId
 
 
 # Configure MongoDB connection
@@ -25,7 +26,7 @@ if __name__ == '__main__':
 
     for entry in data:
         id = entry["_id"]
-        location = collection.find_one({"_id": id})
+        location = collection.find_one({"_id": ObjectId(id)})
         if location:
             update = {}
             for key in entry.keys():

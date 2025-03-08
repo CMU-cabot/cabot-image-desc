@@ -4,8 +4,10 @@ import sys
 import json
 from pymongo import MongoClient
 
-mongo_client = MongoClient('mongodb://mongo:27017/')
-db = mongo_client['geo_image_db']
+mongodb_host = os.getenv('MONGODB_HOST', 'mongodb://mongo:27017/')
+mongodb_name = os.getenv('MONGODB_NAME', 'geo_image_db')
+client = MongoClient(mongodb_host)
+db = client[mongodb_name]
 collection = db['images']
 
 if __name__ == '__main__':

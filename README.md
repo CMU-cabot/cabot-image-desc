@@ -107,17 +107,15 @@ MONGODB_NAME=geo_image_db
 
 - Import json data
   - if there is existing data, update it
-  - data should be under images dir
 
 ```
-./launch.sh -u ./import_data.py images/<import.json>
+./manage-images.sh -P <json>
 ```
 
 ## export data
 
 - Export json data
-  - be careful, this script overwrite the file if exists
 
 ```
-./launch.sh -u ./export_data.py images/<export.json>
+./manage-images.sh -X <json>
 ```
