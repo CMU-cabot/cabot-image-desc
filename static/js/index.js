@@ -1,5 +1,6 @@
 // Create the map with OpenLayers
 const initialLocation = INITIAL_LOCATION;
+const defaultDistance = initialLocation.distance ?? 100;
 var map = new ol.Map({
     target: 'map',
     layers: [
@@ -42,7 +43,7 @@ function getMarkerSrc(fill = "#CCCCCC", stroke = "#666666") {
 }
 
 // Function to query /locations with lat/lng and plot the data
-function loadImagesAt(lat, lng, distance=100) {
+function loadImagesAt(lat, lng, distance=defaultDistance) {
     fetch(`/locations?lat=${lat}&lng=${lng}&distance=${distance}`) // Query with distance param of 1000 meters
         .then(response => response.json())
         .then(data => {
