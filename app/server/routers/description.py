@@ -153,9 +153,23 @@ async def read_description_by_lat_lng(lat: float = Query(...),
     elapsed_time = time.time() - st
     description = original_result.choices[0].message.parsed.description
     translated = original_result.choices[0].message.parsed.translated
-    logger.info(f"prompt: {prompt}")
-    logger.info("Time taken: %s", elapsed_time)
-    logger.info("Generated description: %s", original_result)
+
+    # log
+    date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    log_json(directory=date, name="params", data={
+        "lat": lat,
+        "lng": lng,
+        "rotation": rotation,
+        "max_count": max_count,
+        "max_distance": max_distance,
+        "distance_to_travel": distance_to_travel,
+        "prompt": prompt,
+        "lang": lang,
+    })
+    log_json(directory=date, name="openai-query", data=query)
+    log_json(directory=date, name="openai-prompt", data=prompt)
+    log_json(directory=date, name="locations", data=locations)
+    log_json(directory=date, name="openai-response", data=json.loads(original_result.model_dump_json()))
 
     return {
         'locations': locations,
