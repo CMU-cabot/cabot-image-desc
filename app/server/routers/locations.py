@@ -18,14 +18,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from fastapi import APIRouter, Query, Depends, HTTPException
+import logging
+from fastapi import APIRouter, Form, Query, Depends, HTTPException
 from fastapi import Request
 from fastapi.responses import JSONResponse
 from bson import ObjectId
-from ..auth import verify_api_key_or_cookie
+from .auth import verify_api_key_or_cookie
 from ..db import get_description_by_lat_lng, image_collection
 
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -44,3 +46,75 @@ def read_locations_by_lat_lng(lat: float = Query(...), lng: float = Query(...), 
     if not locations:
         raise HTTPException(status_code=404, detail='No locations found within the given distance')
     return JSONResponse(content=locations)
+
+
+@router.post("/update_description", dependencies=[Depends(verify_api_key_or_cookie)])
+async def update(id: str = Query(...), description: str = Form(...)):
+    logger.info(["updateDescription", id, description])
+    # Find the document by ID
+    location = image_collection.find_one({"_id": ObjectId(id)})
+    if not location:
+        raise HTTPException(status_code=404, detail="Document not found")
+    image_collection.update_one(
+        {"_id": ObjectId(id)},
+        {"$set": {"description": description}}
+    )
+    logger.info(F"updated description {description}")
+    return {"message": "Description updated successfully", "description": description}
+
+
+@router.post("/update_floor", dependencies=[Depends(verify_api_key_or_cookie)])
+async def update_floor(id: str = Query(...), floor: int = Form(...)):
+    logger.info(["updateFloor", id, floor])
+    # Find the document by ID
+    location = image_collection.find_one({"_id": ObjectId(id)})
+    if not location:
+        raise HTTPException(status_code=404, detail="Document not found")
+    image_collection.update_one(
+        {"_id": ObjectId(id)},
+        {"$set": {"floor": floor}}
+    )
+    logger.info(F"updated floor {floor}")
+    return {"message": "Floor updated successfully", "floor": floor}
+
+
+@router.post("/add_tag", dependencies=[Depends(verify_api_key_or_cookie)])
+async def add_tag(id: str = Query(...), tag: str = Form(...)):
+    logger.info(["addTag", id, tag])
+    # Find the document by ID
+    location = image_collection.find_one({"_id": ObjectId(id)})
+    if not location:
+        raise HTTPException(status_code=404, detail="Document not found")
+    # Check if the tag already exists
+    existing_tags = location.get("tags", [])
+    logger.info(existing_tags)
+    if tag in existing_tags:
+        logger.info("tag in existing_tags")
+        return {"message": "Tag already exists", "tag": tag, "all_tags": existing_tags}
+    # Update the document with the new tag
+    updated_tags = existing_tags + [tag]
+    image_collection.update_one(
+        {"_id": ObjectId(id)},
+        {"$set": {"tags": updated_tags}}
+    )
+    logger.info(F"updated tags {updated_tags}")
+    return {"message": "Tag added successfully", "tag": tag, "all_tags": updated_tags}
+
+
+@router.post("/clear_tag", dependencies=[Depends(verify_api_key_or_cookie)])
+async def clear_tag(id: str = Query(...)):
+    logger.info(["clearTag", id])
+    # Find the document by ID
+    location = image_collection.find_one({"_id": ObjectId(id)})
+    if not location:
+        raise HTTPException(status_code=404, detail="Document not found")
+    # Check if the tag already exists
+
+    # Update the document with the new tag
+    updated_tags = []
+    image_collection.update_one(
+        {"_id": ObjectId(id)},
+        {"$set": {"tags": updated_tags}}
+    )
+    logger.info(F"updated tags {updated_tags}")
+    return {"message": "Tag cleared successfully"}

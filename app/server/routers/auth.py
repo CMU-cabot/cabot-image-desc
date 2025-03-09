@@ -22,11 +22,13 @@ import os
 import secrets
 import logging
 from typing import Optional
-from fastapi import Request, Response, Form, HTTPException, Header, status
+from fastapi import APIRouter, Request, Response, Form, HTTPException, Header, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+router = APIRouter()
 
 # In-memory token storage for simplicity
 tokens = set()
@@ -61,6 +63,7 @@ for username, password in zip(usernames, passwords):
 
 
 # POST login endpoint
+@router.post("/login")
 async def login(request: Request, response: Response, username: str = Form(...), password: str = Form(...), next: str = None):
     logger.info("login post")
     correct_password = users.get(username)
@@ -75,6 +78,7 @@ async def login(request: Request, response: Response, username: str = Form(...),
 
 
 # GET logout endpoint
+@router.get("/logout")
 async def logout(request: Request, response: Response):
     token = request.cookies.get("token")
     if token in tokens:
@@ -84,6 +88,7 @@ async def logout(request: Request, response: Response):
 
 
 # GET login page endpoint
+@router.get("/login")
 async def login_page(next: str = None):
     logger.info("login get")
     login_path = Path("/static/login.html")
