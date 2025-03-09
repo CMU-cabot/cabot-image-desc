@@ -171,14 +171,14 @@ def test_read_locations_by_lat_lng_with_api_key(api_key_headers):
 
 
 # Test the read_description_by_lat_lng endpoint
-def test_read_description_by_lat_lng_with_api_key(api_key_headers):
+def test_read_description_by_lat_lng_with_api_key_ja(api_key_headers):
     # Read description by latitude and longitude
     response = client.get("/description?lat=35.62414&lng=139.7754&floor=0&rotation=0.0&max_count=10&max_distance=100", headers=api_key_headers)
     assert response.status_code == 200
 
 
 # Test read_description_by_lat_lng_with_image endpoint using dummy image from test.json
-def test_read_description_by_lat_lng_with_image(api_key_headers, insert_dummy_data):
+def test_read_description_by_lat_lng_with_image_ja(api_key_headers, insert_dummy_data):
     with open('/test/data/test.json') as f:
         dummy = json.load(f)
     image_payload = [{"position": "front", "image_uri": dummy["image"]}]
@@ -199,7 +199,7 @@ def test_read_description_by_lat_lng_with_image(api_key_headers, insert_dummy_da
 
 
 # Test stop_reason endpoint using dummy image from test.json
-def test_stop_reason_with_image(api_key_headers, insert_dummy_data):
+def test_stop_reason_with_image_ja(api_key_headers, insert_dummy_data):
     with open('/test/data/test.json') as f:
         dummy = json.load(f)
     image_payload = [{"position": "front", "image_uri": dummy["image"]}]
@@ -219,7 +219,7 @@ def test_stop_reason_with_image(api_key_headers, insert_dummy_data):
     assert "description" in json_response
 
 
-@pytest.mark.parametrize("lang", ["en", "zn"])
+@pytest.mark.parametrize("lang", ["en", "zh"])
 def test_read_description_by_lat_lng_with_api_key_lang(api_key_headers, lang):
     response = client.get(
         f"/description?lat=35.62414&lng=139.7754&floor=0&rotation=0.0&max_count=10&max_distance=100&lang={lang}",
@@ -227,10 +227,12 @@ def test_read_description_by_lat_lng_with_api_key_lang(api_key_headers, lang):
     )
     assert response.status_code == 200
     json_response = response.json()
+    assert "lang" in json_response, "Expected 'lang' key in response JSON"
+    assert json_response["lang"] == lang, f"Expected language '{lang}' in response JSON"
     assert "translated" in json_response, "Expected 'translated' key in response JSON"
 
 
-@pytest.mark.parametrize("lang", ["en", "zn"])
+@pytest.mark.parametrize("lang", ["en", "zh"])
 def test_read_description_by_lat_lng_with_image_lang(api_key_headers, insert_dummy_data, lang):
     with open('/test/data/test.json') as f:
         dummy = json.load(f)
@@ -249,10 +251,12 @@ def test_read_description_by_lat_lng_with_image_lang(api_key_headers, insert_dum
     response = client.post("/description_with_live_image", headers=api_key_headers, params=params, json=image_payload)
     assert response.status_code == 200
     json_response = response.json()
+    assert "lang" in json_response, "Expected 'lang' key in response JSON"
+    assert json_response["lang"] == lang, f"Expected language '{lang}' in response JSON"
     assert "translated" in json_response, "Expected 'translated' key in response JSON"
 
 
-@pytest.mark.parametrize("lang", ["en", "zn"])
+@pytest.mark.parametrize("lang", ["en", "zh"])
 def test_stop_reason_with_image_lang(api_key_headers, insert_dummy_data, lang):
     with open('/test/data/test.json') as f:
         dummy = json.load(f)
@@ -271,4 +275,6 @@ def test_stop_reason_with_image_lang(api_key_headers, insert_dummy_data, lang):
     response = client.post("/stop_reason", headers=api_key_headers, params=params, json=image_payload)
     assert response.status_code == 200
     json_response = response.json()
+    assert "lang" in json_response, "Expected 'lang' key in response JSON"
+    assert json_response["lang"] == lang, f"Expected language '{lang}' in response JSON"
     assert "translated" in json_response, "Expected 'translated' key in response JSON"

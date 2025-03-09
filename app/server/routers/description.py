@@ -153,6 +153,11 @@ async def read_description_by_lat_lng(lat: float = Query(...),
     elapsed_time = time.time() - st
     description = original_result.choices[0].message.parsed.description
     translated = original_result.choices[0].message.parsed.translated
+    lang = original_result.choices[0].message.parsed.lang
+    logger.info("Time taken: %s", elapsed_time)
+    logger.info("Generated description: %s", description)
+    logger.info("Translated description: %s", translated)
+    logger.info("Language: %s", lang)
 
     # log
     date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
@@ -176,6 +181,7 @@ async def read_description_by_lat_lng(lat: float = Query(...),
         'elapsed_time': elapsed_time,
         'description': description,
         'translated': translated,
+        'lang': lang,
     }
 
 
@@ -221,8 +227,11 @@ async def read_description_by_lat_lng_with_image(request: Request,
     elapsed_time = time.time() - st
     description = original_result.choices[0].message.parsed.description
     translated = original_result.choices[0].message.parsed.translated
+    lang = original_result.choices[0].message.parsed.lang
     logger.info("Time taken: %s", elapsed_time)
     logger.info("Generated description: %s", description)
+    logger.info("Translated description: %s", translated)
+    logger.info("Language: %s", lang)
 
     # log
     date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
@@ -247,6 +256,7 @@ async def read_description_by_lat_lng_with_image(request: Request,
         'locations': locations,
         'elapsed_time': elapsed_time,
         'description': description,
+        'lang': lang,
         'translated': translated,
     }
 
@@ -293,8 +303,11 @@ async def stop_reason(request: Request,
     elapsed_time = time.time() - st
     description = original_result.choices[0].message.parsed.message
     translated = original_result.choices[0].message.parsed.translated
+    lang = original_result.choices[0].message.parsed.lang
     logger.info("Time taken: %s", elapsed_time)
     logger.info("Generated description: %s", description)
+    logger.info("Translated description: %s", translated)
+    logger.info("Language: %s", lang)
 
     # log
     date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
@@ -327,6 +340,7 @@ async def stop_reason(request: Request,
         "elapsed_time": elapsed_time,
         "description": description,
         "translated": translated,
+        "lang": lang,
     }
 
 
