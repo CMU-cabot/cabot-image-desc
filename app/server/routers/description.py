@@ -18,16 +18,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+import base64
+import datetime
+import json
 import logging
 import math
 import os
-import json
 import time
-import base64
-import datetime
-from typing import Optional
-from pydantic import BaseModel
 from fastapi import APIRouter, Depends, Query, Request
+from pydantic import BaseModel
+from typing import Optional
 
 # Import required functions/classes from openai_agent and auth
 from ..openai.openai_agent import GPTAgent, construct_prompt_for_image_description

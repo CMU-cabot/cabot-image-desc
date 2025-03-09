@@ -18,14 +18,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+import logging
+import os
+import sys
+from pathlib import Path
 from fastapi import Depends
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
-from pathlib import Path
-import os
-import logging
-import sys
 from .routers import auth
 from .routers.auth import verify_api_key_or_cookie
 from .routers import locations
@@ -68,14 +68,12 @@ async def read_list():
     html_content = index_path.read_text().replace("INITIAL_LOCATION_PLACEHOLDER", initial_location)
     return HTMLResponse(content=html_content)
 
-
-# Mount static files for serving HTML, JS, and CSS
-app.mount("/js/lib", StaticFiles(directory="/static_js_lib"), name="static/js/lib")
-
 # Register the locations router
 app.include_router(auth.router)
 app.include_router(locations.router)
 app.include_router(description.router)
 
+# Mount static files for serving HTML, JS, and CSS
+app.mount("/js/lib", StaticFiles(directory="/static_js_lib"), name="static/js/lib")
 # This should be last to avoid conflicts with other routes
 app.mount("/", StaticFiles(directory="/static"), name="static")

@@ -19,16 +19,23 @@
 # THE SOFTWARE.
 
 import logging
-from fastapi import APIRouter, Form, Query, Depends, HTTPException
-from fastapi import Request
-from fastapi.responses import JSONResponse
 from bson import ObjectId
+from fastapi import APIRouter, Form, Depends, HTTPException, Request, Query
+from fastapi.responses import JSONResponse
 from .auth import verify_api_key_or_cookie
 from ..db import get_description_by_lat_lng, image_collection
 
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+@router.get('/locations', dependencies=[Depends(verify_api_key_or_cookie)])
+def read_locations_by_lat_lng(lat: float = Query(...), lng: float = Query(...), distance: float = Query(1000)):
+    locations = get_description_by_lat_lng(lat, lng, 0, distance)
+    if not locations:
+        raise HTTPException(status_code=404, detail='No locations found within the given distance')
+    return JSONResponse(content=locations)
 
 
 @router.get('/locations/{location_id}', dependencies=[Depends(verify_api_key_or_cookie)])
@@ -38,14 +45,6 @@ def read_location(location_id: str, request: Request):
         raise HTTPException(status_code=404, detail='Location not found')
     location['_id'] = str(location['_id'])
     return JSONResponse(content=location)
-
-
-@router.get('/locations', dependencies=[Depends(verify_api_key_or_cookie)])
-def read_locations_by_lat_lng(lat: float = Query(...), lng: float = Query(...), distance: float = Query(1000)):
-    locations = get_description_by_lat_lng(lat, lng, 0, distance)
-    if not locations:
-        raise HTTPException(status_code=404, detail='No locations found within the given distance')
-    return JSONResponse(content=locations)
 
 
 @router.post("/update_description", dependencies=[Depends(verify_api_key_or_cookie)])

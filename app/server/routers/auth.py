@@ -18,13 +18,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+import logging
 import os
 import secrets
-import logging
-from typing import Optional
-from fastapi import APIRouter, Request, Response, Form, HTTPException, Header, status
+from fastapi import APIRouter, Form, Header, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pathlib import Path
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ tokens = set()
 
 
 def generate_token():
-    return secrets.token_hex(16)
+    return secrets.token_hex(128)
 
 
 def verify_api_key_or_cookie(request: Request, x_api_key: Optional[str] = Header(None)):
