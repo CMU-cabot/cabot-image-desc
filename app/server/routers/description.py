@@ -345,14 +345,14 @@ async def stop_reason(request: Request,
 
 
 def log_json(directory, name, data):
-    basepath = f"logs/{directory}"
+    basepath = f"/logs/{directory}"
     os.makedirs(basepath, exist_ok=True)
     with open(f"{basepath}/{name}.json", "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
 
 def log_text(directory, name, data):
-    basepath = f"logs/{directory}"
+    basepath = f"/logs/{directory}"
     os.makedirs(basepath, exist_ok=True)
     with open(f"{basepath}/{name}.txt", "w") as f:
         print(data, file=f)
@@ -363,7 +363,7 @@ def log_image(directory, position, images):
     if image:
         image_uri = image[0]["image_uri"]
 
-    basepath = f"logs/{directory}"
+    basepath = f"/logs/{directory}"
     os.makedirs(basepath, exist_ok=True)
     with open(f"{basepath}/{position}.jpg", "wb") as f:
         f.write(base64.b64decode(image_uri.split(",")[1]))

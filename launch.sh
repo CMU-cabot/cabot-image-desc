@@ -21,7 +21,7 @@
 # THE SOFTWARE.
 
 stop_launch() {
-    docker compose -f $dcfile $profile down
+    docker compose -f $dcfile --profile ${profile} down
     exit 0
 }
 
