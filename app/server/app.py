@@ -18,9 +18,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from fastapi import HTTPException, status, Response
-from fastapi import FastAPI, Form, Query, Request, Header, Depends
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi import HTTPException, Depends
+from fastapi import FastAPI, Form, Query, Request
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 from pymongo import MongoClient
@@ -37,7 +37,7 @@ import time
 import base64
 import datetime
 import json
-import secrets
+from .auth import login, login_page, logout, verify_api_key_or_cookie
 
 # Set up logging configuration to output to stderr
 logging.basicConfig(
@@ -62,72 +62,6 @@ image_collection = db['images']
 
 # Ensure the collection is indexed for geospatial queries
 image_collection.create_index([("location", "2dsphere")])
-
-API_KEY = os.getenv("API_KEY")
-
-# Store tokens in memory for simplicity (consider using a database for production)
-tokens = set()
-
-
-def generate_token():
-    return secrets.token_hex(16)
-
-
-def verify_api_key_or_cookie(request: Request, x_api_key: Optional[str] = Header(None)):
-    logger.info("verify_api_key_or_cookie")
-    if x_api_key and x_api_key == API_KEY:
-        return
-    token = request.cookies.get("token")
-    if not token or token not in tokens:
-        raise HTTPException(
-            status_code=status.HTTP_303_SEE_OTHER,
-            detail="Redirecting to login",
-            headers={"Location": f"/login?next={request.url.path}"}
-        )
-
-
-# Load users from environment variables
-users = {}
-usernames = os.getenv("USERNAMES", "").split(",")
-passwords = os.getenv("PASSWORDS", "").split(",")
-if len(usernames) != len(passwords):
-    raise ValueError("USERNAMES and PASSWORDS environment variables must have the same number of entries")
-
-for username, password in zip(usernames, passwords):
-    users[username] = password
-
-
-@app.post("/login")
-async def login(request: Request, response: Response, username: str = Form(...), password: str = Form(...), next: Optional[str] = None):
-    logger.info("login post")
-    correct_password = users.get(username)
-    if not correct_password or not secrets.compare_digest(correct_password, password):
-        return HTMLResponse(content="Invalid username or password", status_code=status.HTTP_401_UNAUTHORIZED)
-    token = generate_token()
-    tokens.add(token)
-    redirect_url = next if next else "/"
-    response = RedirectResponse(url=redirect_url, status_code=status.HTTP_303_SEE_OTHER)
-    response.set_cookie(key="token", value=token, httponly=True, secure=True, path="/")
-    return response
-
-
-@app.get("/logout")
-async def logout(response: Response, request: Request):
-    token = request.cookies.get("token")
-    if token in tokens:
-        tokens.remove(token)
-    response.delete_cookie("token", path="/")
-    return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
-
-
-@app.get("/login", response_class=HTMLResponse)
-async def login_page(next: Optional[str] = None):
-    logger.info("login get")
-    login_path = Path("/static/login.html")
-    html_content = login_path.read_text()
-    if next:
-        html_content = html_content.replace('action="/login"', f'action="/login?next={next}"')
-    return HTMLResponse(content=html_content)
 
 
 # API to get a location by its ID
@@ -622,7 +556,11 @@ async def read_list():
 
 # Mount static files for serving HTML, JS, and CSS
 app.mount("/js/lib", StaticFiles(directory="/static_js_lib"), name="static/js/lib")
-app.mount("/", StaticFiles(directory="/static"), name="static")
 
-# Main entry point
-# Note: To run the FastAPI application, use the command: `uvicorn your_filename:app --reload`
+# Register auth endpoints
+app.add_api_route("/login", login, methods=["POST"])
+app.add_api_route("/login", login_page, methods=["GET"])
+app.add_api_route("/logout", logout, methods=["GET"])
+
+# This should be last to avoid conflicts with other routes
+app.mount("/", StaticFiles(directory="/static"), name="static")

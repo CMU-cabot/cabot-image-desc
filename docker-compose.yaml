@@ -100,6 +100,7 @@ services:
           - type=registry
     environment:
       - VERBOSE_OUTPUT=${VERBOSE_OUTPUT:-false}
+      - EXTRA_ARGS
     networks:
       - chat_dic_network-test
     profiles:
@@ -115,9 +116,9 @@ services:
       - -c
       - |
         if [ "${VERBOSE_OUTPUT}" = "true" ]; then
-          pytest /test/test-app.py -vvv --log-cli-level=INFO;
+          pytest /test/test-app.py -vvv --log-cli-level=INFO ${EXTRA_ARGS};
         else
-          pytest /test/test-app.py;
+          pytest /test/test-app.py ${EXTRA_ARGS};
         fi
 
   image_desc-test-openai:
