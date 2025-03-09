@@ -23,7 +23,6 @@ from fastapi import FastAPI, Form, Query, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
-from pymongo import MongoClient
 from typing import Optional
 from pydantic import BaseModel
 from .openai_agent import GPTAgent, construct_prompt_for_image_description
@@ -38,6 +37,8 @@ import base64
 import datetime
 import json
 from .auth import login, login_page, logout, verify_api_key_or_cookie
+from .routers import locations
+from .db import get_description_by_lat_lng, image_collection
 
 # Set up logging configuration to output to stderr
 logging.basicConfig(
@@ -52,59 +53,6 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 gpt_agent = GPTAgent()
-
-# Configure MongoDB connection
-mongodb_host = os.getenv('MONGODB_HOST', 'mongodb://mongo:27017/')
-mongodb_name = os.getenv('MONGODB_NAME', 'geo_image_db')
-client = MongoClient(mongodb_host)
-db = client[mongodb_name]
-image_collection = db['images']
-
-# Ensure the collection is indexed for geospatial queries
-image_collection.create_index([("location", "2dsphere")])
-
-
-# API to get a location by its ID
-@app.get('/locations/{location_id}', dependencies=[Depends(verify_api_key_or_cookie)])
-def read_location(location_id: str):
-    location = image_collection.find_one({"_id": ObjectId(location_id)})
-    if not location:
-        raise HTTPException(status_code=404, detail='Location not found')
-    location['_id'] = str(location['_id'])
-    return location
-
-
-# API to get locations by latitude, longitude, and optional distance
-@app.get('/locations', dependencies=[Depends(verify_api_key_or_cookie)])
-def read_locations_by_lat_lng(lat: float = Query(...), lng: float = Query(...), distance: Optional[float] = Query(1000)):
-    locations = get_description_by_lat_lng(lat, lng, 0, distance)
-    if not locations:
-        raise HTTPException(status_code=404, detail='No locations found within the given distance')
-    return locations
-
-
-# Existing function to get nearby locations
-def get_description_by_lat_lng(lat, lng, floor, max_distance, max_count=0):
-    query = {
-        'location': {
-            '$near': {
-                '$geometry': {
-                    'type': 'Point',
-                    'coordinates': [lng, lat]
-                },
-                '$maxDistance': max_distance
-            }
-        }
-    }
-    if floor:
-        query['floor'] = floor
-    if max_count:
-        locations = list(image_collection.find(query).limit(max_count))
-    else:
-        locations = list(image_collection.find(query))
-    for location in locations:
-        location['_id'] = str(location['_id'])
-    return locations
 
 
 # Function to get the relative orientation
@@ -561,6 +509,9 @@ app.mount("/js/lib", StaticFiles(directory="/static_js_lib"), name="static/js/li
 app.add_api_route("/login", login, methods=["POST"])
 app.add_api_route("/login", login_page, methods=["GET"])
 app.add_api_route("/logout", logout, methods=["GET"])
+
+# Register the locations router
+app.include_router(locations.router)
 
 # This should be last to avoid conflicts with other routes
 app.mount("/", StaticFiles(directory="/static"), name="static")

@@ -21,7 +21,8 @@
 import os
 import secrets
 import logging
-from fastapi import Request, Response, Form, HTTPException, status
+from typing import Optional
+from fastapi import Request, Response, Form, HTTPException, Header, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from pathlib import Path
 
@@ -35,8 +36,8 @@ def generate_token():
     return secrets.token_hex(16)
 
 
-def verify_api_key_or_cookie(request: Request, x_api_key: str = None):
-    logger.info("verify_api_key_or_cookie")
+def verify_api_key_or_cookie(request: Request, x_api_key: Optional[str] = Header(None)):
+    logger.info(f"verify_api_key_or_cookie {x_api_key=}")
     API_KEY = os.getenv("API_KEY")
     if x_api_key and x_api_key == API_KEY:
         return
