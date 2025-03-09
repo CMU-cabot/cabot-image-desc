@@ -18,17 +18,29 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from openai import AsyncOpenAI
 import base64
 import cv2
-import os
 import json
-import re
+import os
+from openai import AsyncOpenAI
+from pydantic import BaseModel
+
+
+USE_PAST_EXPLANATIONS = os.environ.get("USE_PAST_EXPLANATIONS", "false").lower() == "true"
+
+
+class TranslatedDescription(BaseModel):
+    description: str
+    translated: str
+    lang: str
+
+    def to_dict(self):
+        return self.model_dump()
 
 
 DESCRIPTION_PROMPT_TEMPLATE = """
 # 指示
-与えられた画像について説明してください。
+与えられた画像について説明してdescriptionにいれます。
 複数の画像は以下の向きに対応しています。
 {image_tags}
 
@@ -39,6 +51,8 @@ DESCRIPTION_PROMPT_TEMPLATE = """
 {front}
 {right}
 {left}
+
+また、descriptionを言語コード「{lang}」にしたがって翻訳しtranslatedにいれます。その時使ったコードをlangにいれます。
 
 ## 必ずすべきこと
 1. {sentence_atmosphere}説明すること。全体で丁度{min_sentence_length}文の説明になるようにしてください。
@@ -113,8 +127,15 @@ def determine_scene_description_style(sentence_length: int, force_use_default_st
     return scene_desc_style
 
 
-def construct_prompt_for_image_description(request_length_index=0, distance_to_travel=0, front="", right="", left="", past_explanations="", image_tags=""):
-
+def construct_prompt_for_image_description(request_length_index=0,
+                                           distance_to_travel=0,
+                                           front="",
+                                           right="",
+                                           left="",
+                                           past_explanations="",
+                                           image_tags="",
+                                           lang="ja",
+                                           ):
     if front != "":
         front = front.replace("\n", " ")
     if right != "":
@@ -130,23 +151,34 @@ def construct_prompt_for_image_description(request_length_index=0, distance_to_t
 
     if sentence_length == 1:
         front = right = left = ""  # when only two sentences are requested, we dont want to add right and left sentences because LLM get affected by many information
-    # print(f"sentence_length: {sentence_length}, request_length_index: {request_length_index}, distance_to_travel: {distance_to_travel}")
-    # print(f"front: {front}, right: {right}, left: {left}")
 
     prompt = prompt_template.format(front=front,
                                     right=right,
                                     left=left,
                                     min_sentence_length=sentence_length,
-                                    max_sentence_length=sentence_length+1,
+                                    max_sentence_length=sentence_length + 1,
                                     image_tags=image_tags,
                                     sentence_atmosphere=sentence_atmosphere,
-                                    scene_description_style=scene_desc_style)
+                                    scene_description_style=scene_desc_style,
+                                    lang=lang,
+                                    )
 
-    # restore if we want to ignore past explanations
-    # if past_explanations:
-    #     prompt += PAST_EXPLANATIONS_TEMPLATE.format(past_explanations=past_explanations)
+    if USE_PAST_EXPLANATIONS and past_explanations:
+        prompt += PAST_EXPLANATIONS_TEMPLATE.format(past_explanations=past_explanations)
 
     return prompt
+
+
+class StopReason(BaseModel):
+    pedestrian_info: str
+    object_info: str
+    thought: str
+    message: str
+    translated: str
+    lang: str
+
+    def to_dict(self):
+        return self.model_dump()
 
 
 STOP_REASON_PROMPT_TEMPLATE = """
@@ -157,6 +189,7 @@ STOP_REASON_PROMPT_TEMPLATE = """
 その次に近くの障害物の数とそれらの種類を把握してください（object_info）。障害物がない場合は「障害物はありません」と答えてください。
 thoughtには、pedestrian_infoとobject_infoを元に、ロボットが止まった理由とどんなことをユーザに伝えるべきかを考えてください。
 最後に、その情報を元に、ロボットが止まった具体的な理由を説明してください（message）。messageは直接ユーザに読み上げる内容です。
+また、messageを言語コード「{lang}」にしたがって翻訳しtranslatedにいれます。その時使ったコードをlangにいれます。
 
 ## ルール
 1. 日本語で簡潔に述べること。
@@ -178,15 +211,15 @@ thoughtには、pedestrian_infoとobject_infoを元に、ロボットが止ま�
 """
 
 
-def construct_prompt_for_stop_reason(
-    request_length_index=0,
-    distance_to_travel=0,
-    front="",
-    right="",
-    left="",
-    past_explanations="",
-    image_tags="",
-):
+def construct_prompt_for_stop_reason(request_length_index=0,
+                                     distance_to_travel=0,
+                                     front="",
+                                     right="",
+                                     left="",
+                                     past_explanations="",
+                                     image_tags="",
+                                     lang="ja",
+                                     ):
     if front != "":
         front = front.replace("\n", " ")
     if right != "":
@@ -212,23 +245,20 @@ def construct_prompt_for_stop_reason(
         front = right = left = (
             ""  # when only two sentences are requested, we dont want to add right and left sentences because LLM get affected by many information
         )
-    # print(f"sentence_length: {sentence_length}, request_length_index: {request_length_index}, distance_to_travel: {distance_to_travel}")
-    # print(f"front: {front}, right: {right}, left: {left}")
 
-    prompt = prompt_template.format(
-        front=front,
-        right=right,
-        left=left,
-        min_sentence_length=sentence_length,
-        max_sentence_length=sentence_length + 1,
-        image_tags=image_tags,
-        sentence_atmosphere=sentence_atmosphere,
-        scene_description_style=scene_desc_style,
-    )
+    prompt = prompt_template.format(front=front,
+                                    right=right,
+                                    left=left,
+                                    min_sentence_length=sentence_length,
+                                    max_sentence_length=sentence_length + 1,
+                                    image_tags=image_tags,
+                                    sentence_atmosphere=sentence_atmosphere,
+                                    scene_description_style=scene_desc_style,
+                                    lang=lang,
+                                    )
 
-    # restore if we want to ignore past explanations
-    # if past_explanations:
-    #     prompt += PAST_EXPLANATIONS_TEMPLATE.format(past_explanations=past_explanations)
+    if USE_PAST_EXPLANATIONS and past_explanations:
+        prompt += PAST_EXPLANATIONS_TEMPLATE.format(past_explanations=past_explanations)
 
     return prompt
 
@@ -382,25 +412,3 @@ class GPTAgent:
         else:
             response = await self.client.chat.completions.create(**query)
         return (response, query)
-
-
-def extract_json_part(json_like_string):
-    # if json is already in the correct format, return it
-    if type(json_like_string) == dict:
-        return json_like_string
-    # Regular expression to match JSON part
-    json_pattern = re.compile(r'\{.*?\}', re.DOTALL)
-
-    # Find the JSON part
-    match = json_pattern.search(json_like_string)
-
-    if match:
-        json_part = match.group(0)
-        try:
-            # Parse the JSON part
-            json_data = json.loads(json_part)
-            return json_data
-        except json.JSONDecodeError:
-            return None
-    else:
-        return None

@@ -26,12 +26,12 @@ import math
 import os
 import time
 from fastapi import APIRouter, Depends, Query, Request
-from pydantic import BaseModel
 from typing import Optional
 
 # Import required functions/classes from openai_agent and auth
-from ..openai.openai_agent import GPTAgent, construct_prompt_for_image_description
-from ..openai.openai_agent import construct_prompt_for_stop_reason
+from ..openai.openai_agent import GPTAgent
+from ..openai.openai_agent import TranslatedDescription, construct_prompt_for_image_description
+from ..openai.openai_agent import StopReason, construct_prompt_for_stop_reason
 from .auth import verify_api_key_or_cookie
 from ..db import get_description_by_lat_lng
 
@@ -123,18 +123,16 @@ def preprocess_descriptions(locations, rotation, lat, lng, max_distance):
 
 
 @router.get('/description', dependencies=[Depends(verify_api_key_or_cookie)])
-async def read_description_by_lat_lng(
-        lat: float = Query(...),
-        lng: float = Query(...),
-        floor: int = Query(0),
-        rotation: float = Query(...),
-        max_count: Optional[int] = Query(10),
-        max_distance: Optional[float] = Query(100)):
-
+async def read_description_by_lat_lng(lat: float = Query(...),
+                                      lng: float = Query(...),
+                                      floor: int = Query(0),
+                                      rotation: float = Query(...),
+                                      max_count: Optional[int] = Query(10),
+                                      max_distance: Optional[float] = Query(100),
+                                      lang: Optional[str] = Query("ja"),
+                                      ):
     logger.info("description get")
     locations = get_description_by_lat_lng(lat, lng, floor, max_distance, max_count)
-    # if not locations:
-    #     raise HTTPException(status_code=404, detail='No locations found within the given distance')
 
     location_per_directions, past_explanations = preprocess_descriptions(locations, rotation, lat, lng, max_distance)
 
@@ -147,14 +145,14 @@ async def read_description_by_lat_lng(
                                                     right=location_per_directions["right"]["description"],
                                                     left=location_per_directions["left"]["description"],
                                                     past_explanations=past_explanations,
+                                                    lang=lang,
                                                     )
 
     st = time.time()
-    (original_result, query) = await gpt_agent.query_with_images(
-        prompt=prompt
-    )
+    (original_result, query) = await gpt_agent.query_with_images(prompt=prompt, response_format=TranslatedDescription)
     elapsed_time = time.time() - st
-    description = original_result.choices[0].message.content
+    description = original_result.choices[0].message.parsed.description
+    translated = original_result.choices[0].message.parsed.translated
     logger.info(f"prompt: {prompt}")
     logger.info("Time taken: %s", elapsed_time)
     logger.info("Generated description: %s", original_result)
@@ -162,27 +160,26 @@ async def read_description_by_lat_lng(
     return {
         'locations': locations,
         'elapsed_time': elapsed_time,
-        'description': description
+        'description': description,
+        'translated': translated,
     }
 
 
 # TODO: upload a live image and describe the image, using nearby data
 @router.post('/description_with_live_image', dependencies=[Depends(verify_api_key_or_cookie)])
-async def read_description_by_lat_lng_with_image(
-    request: Request,
-    lat: float = Query(...),
-    lng: float = Query(...),
-    floor: int = Query(0),
-    rotation: float = Query(...),
-    max_count: Optional[int] = Query(10),
-    max_distance: Optional[float] = Query(15),
-    length_index: Optional[int] = Query(0),  # which is the shortest press to the button UI
-    distance_to_travel: Optional[float] = Query(100),  # meter
-):
+async def read_description_by_lat_lng_with_image(request: Request,
+                                                 lat: float = Query(...),
+                                                 lng: float = Query(...),
+                                                 floor: int = Query(0),
+                                                 rotation: float = Query(...),
+                                                 max_count: Optional[int] = Query(10),
+                                                 max_distance: Optional[float] = Query(15),
+                                                 length_index: Optional[int] = Query(0),  # which is the shortest press to the button UI
+                                                 distance_to_travel: Optional[float] = Query(100),  # meter
+                                                 lang: Optional[str] = Query("ja"),
+                                                 ):
     logger.info("description_with_live_image post")
     locations = get_description_by_lat_lng(lat, lng, floor, max_distance, max_count)
-    # if not locations:
-    #     raise HTTPException(status_code=404, detail='No locations found within the given distance')
 
     images = await request.json()
 
@@ -201,15 +198,15 @@ async def read_description_by_lat_lng_with_image(
                                                     right=location_per_directions["right"]["description"],
                                                     left=location_per_directions["left"]["description"],
                                                     past_explanations=past_explanations,
-                                                    image_tags=tags)
+                                                    image_tags=tags,
+                                                    lang=lang,
+                                                    )
 
     st = time.time()
-    (original_result, query) = await gpt_agent.query_with_images(
-        prompt=prompt,
-        images=images
-    )
+    (original_result, query) = await gpt_agent.query_with_images(prompt=prompt, images=images, response_format=TranslatedDescription)
     elapsed_time = time.time() - st
-    description = original_result.choices[0].message.content
+    description = original_result.choices[0].message.parsed.description
+    translated = original_result.choices[0].message.parsed.translated
     logger.info("Time taken: %s", elapsed_time)
     logger.info("Generated description: %s", description)
 
@@ -224,7 +221,8 @@ async def read_description_by_lat_lng_with_image(
         "max_distance": max_distance,
         "length_index": length_index,
         "distance_to_travel": distance_to_travel,
-        "prompt": prompt
+        "prompt": prompt,
+        "lang": lang,
     })
     log_json(directory=date, name="openai-query", data=query)
     log_json(directory=date, name="openai-prompt", data=prompt)
@@ -234,35 +232,29 @@ async def read_description_by_lat_lng_with_image(
     return {
         'locations': locations,
         'elapsed_time': elapsed_time,
-        'description': description
+        'description': description,
+        'translated': translated,
     }
 
 
 @router.post("/stop_reason", dependencies=[Depends(verify_api_key_or_cookie)])
-async def stop_reason(
-    request: Request,
-    lat: float = Query(...),
-    lng: float = Query(...),
-    floor: int = Query(0),
-    rotation: float = Query(...),
-    max_count: Optional[int] = Query(10),
-    max_distance: Optional[float] = Query(100),
-    length_index: Optional[int] = Query(
-        0
-    ),  # which is the shortest press to the button UI
-    distance_to_travel: Optional[float] = Query(100),  # meter
-):
+async def stop_reason(request: Request,
+                      lat: float = Query(...),
+                      lng: float = Query(...),
+                      floor: int = Query(0),
+                      rotation: float = Query(...),
+                      max_count: Optional[int] = Query(10),
+                      max_distance: Optional[float] = Query(100),
+                      length_index: Optional[int] = Query(0),
+                      distance_to_travel: Optional[float] = Query(100),  # meter
+                      lang: Optional[str] = Query("ja"),
+                      ):
     logger.info("stop_reason post")
     locations = get_description_by_lat_lng(lat, lng, floor, max_distance, max_count)
-    # describe without existing image data
-    # if not locations:
-    #     raise HTTPException(status_code=404, detail='No locations found within the given distance')
 
     images = await request.json()
 
-    _, past_explanations = preprocess_descriptions(
-        locations, rotation, lat, lng, max_distance
-    )
+    _, past_explanations = preprocess_descriptions(locations, rotation, lat, lng, max_distance)
 
     count = 1
     tags = ""
@@ -275,25 +267,18 @@ async def stop_reason(
         count += 1
         temp.append(image)
 
-    prompt = construct_prompt_for_stop_reason(
-        request_length_index=length_index,
-        distance_to_travel=distance_to_travel,
-        past_explanations=past_explanations,
-        image_tags=tags,
-    )
+    prompt = construct_prompt_for_stop_reason(request_length_index=length_index,
+                                              distance_to_travel=distance_to_travel,
+                                              past_explanations=past_explanations,
+                                              image_tags=tags,
+                                              lang=lang,
+                                              )
 
-    class StopReason(BaseModel):
-        pedestrian_info: str
-        object_info: str
-        thought: str
-        message: str
-
-        def to_dict(self):
-            return self.dict()
     st = time.time()
     (original_result, query) = await gpt_agent.query_with_images(prompt=prompt, images=temp, response_format=StopReason)
     elapsed_time = time.time() - st
     description = original_result.choices[0].message.parsed.message
+    translated = original_result.choices[0].message.parsed.translated
     logger.info("Time taken: %s", elapsed_time)
     logger.info("Generated description: %s", description)
 
@@ -313,6 +298,7 @@ async def stop_reason(
             "length_index": length_index,
             "distance_to_travel": distance_to_travel,
             "prompt": prompt,
+            "lang": lang,
         },
     )
     log_json(directory=date, name="openai-query", data=query)
@@ -326,6 +312,7 @@ async def stop_reason(
         "locations": locations,
         "elapsed_time": elapsed_time,
         "description": description,
+        "translated": translated,
     }
 
 
