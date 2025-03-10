@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Query Test</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css" />
+    <link rel="stylesheet" href="css/index.css" />
+    <script>
+        var INITIAL_LOCATION=INITIAL_LOCATION_PLACEHOLDER
+        console.log(INITIAL_LOCATION)
+    </script>
+</head>
+<body>
+    <div id="query">
+    <form id="imageForm" enctype="multipart/form-data">
+        <input type="file" id="imageInput" accept="image/*"><br/>
+        <!-- New language select field -->
+        <select id="languageSelect" name="language">
+            <option value="ja">Japanese</option>
+            <option value="en">English</option>
+            <option value="zh">Chinese</option>
+            <option value="ko">Korean</option>
+        </select>
+        <button type="button" onclick="surround()">Surround</button>
+        <button type="button" onclick="stopReason()">Stop Reason</button>
+    </form>
+    </div>
+    <pre id="result"></pre>
+    <div id="navigation">
+        <a href="./index.html">Image Map</a><br />
+        <a href="./list.html">Image List</a>
+    </div>
+
+    <script src="js/lib/exif.min.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/test.js"></script>
+</body>
+</html>

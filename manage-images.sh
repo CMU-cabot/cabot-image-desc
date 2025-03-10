@@ -43,9 +43,27 @@ function snore()
 function help() {
     echo "Usage: "
     echo "  $0 [options]"
-    echo "  Examples:"
-    echo "   $0 -i image.jpg"
-    echo "   $0 -I /path/to/images       # upload all images in the directory"
+    echo "  Examples (basic):"
+    echo "   $0 -i <image>                       # specify an image and describe image with OpenAI if the image is not in the DB"
+    echo "   $0 -i <image> -r                    # describe image even if the image is already described and in the DB"
+    echo "   $0 -i <image> -p <prompt> -r        # describe image with the specified prompt (check default-prompt.txt)"
+    echo "   $0 -i <image> -t <tag1> -t <tag2>   # add tag(s) to the image"
+    echo "   $0 -i <image> -F <floor>            # set floor of the image"
+    echo "   $0 -i <image> -c                    # clear all tags of the image"
+    echo "   $0 -i <image> -T <tag1> -T <tag2>   # remove tag(s) from the image"
+    echo "   $0 -i <image> -e                    # check EXIF of the image"
+    echo "   $0 -i <image> -j                    # check JSON data of the image in the DB"
+    echo "   $0 -i <image> -n                    # check actions without execution"
+    echo ""
+    echo "  Examples (process images in the dir):"
+    echo "   $0 -I /path/to/images               # process all images in the dir one by one, you can use all the options above"
+    echo ""
+    echo "  Examples (others):"
+    echo "   $0 -X <output_file>                 # export all data into a JSON file"
+    echo "   $0 -P <intput_file>                 # import all data in the JSON file"
+    echo "   $0 -l                               # list all JSON IDs in the DB"
+    echo "   $0 -J <id>                          # check the JSON data which is identified by the specified ID"
+    echo "   $0 -R <id>                          # remove the specified JSON from the DB"
     echo ""
     echo "  -d              : Development mode"
     echo "  -c              : Clear all tags"
@@ -68,7 +86,7 @@ function help() {
     exit 1
 }
 
-DEBUG=
+DEBUG=false
 PROFILE=prod
 IMAGE=
 DIRECTORY=
@@ -214,6 +232,5 @@ elif [[ -n $DIRECTORY ]]; then
         upload_image $file
     done
 else
-    echo "Either -i or -I option is required"
     help
 fi

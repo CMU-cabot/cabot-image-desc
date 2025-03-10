@@ -53,20 +53,30 @@ async def read_root():
 
 @app.get("/index.html", response_class=HTMLResponse, dependencies=[Depends(verify_api_key_or_cookie)])
 async def read_index():
-    logger.info("index get")
-    index_path = Path("/static/index.html")
-    initial_location = os.getenv("INITIAL_LOCATION", '{"lat": 35.62414166666667, "lng": 139.77542222222223, "floor": 1}')
-    html_content = index_path.read_text().replace("INITIAL_LOCATION_PLACEHOLDER", initial_location)
-    return HTMLResponse(content=html_content)
+    return HTMLResponse(content=read_file("index.html"))
 
 
 @app.get("/list.html", response_class=HTMLResponse, dependencies=[Depends(verify_api_key_or_cookie)])
 async def read_list():
-    logger.info("list get")
-    index_path = Path("/static/list.html")
+    return HTMLResponse(content=read_file("list.html"))
+
+
+@app.get("/test.html", response_class=HTMLResponse, dependencies=[Depends(verify_api_key_or_cookie)])
+async def read_test():
+    return HTMLResponse(content=read_file("test.html"))
+
+
+def read_file(filename):
+    """Read a file from the static directory."""
+    logger.info(f"read_file {filename}")
+    file_path = Path("/static") / filename
+    if not file_path.exists():
+        logger.error(f"File {filename} not found.")
+        return None
     initial_location = os.getenv("INITIAL_LOCATION", '{"lat": 35.62414166666667, "lng": 139.77542222222223, "floor": 1}')
-    html_content = index_path.read_text().replace("INITIAL_LOCATION_PLACEHOLDER", initial_location)
-    return HTMLResponse(content=html_content)
+    html_content = file_path.read_text().replace("INITIAL_LOCATION_PLACEHOLDER", initial_location)
+    return html_content
+
 
 # Register the locations router
 app.include_router(auth.router)

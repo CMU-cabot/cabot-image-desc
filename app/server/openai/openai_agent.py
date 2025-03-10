@@ -53,6 +53,7 @@ DESCRIPTION_PROMPT_TEMPLATE = """
 {left}
 
 また、descriptionを言語コード「{lang}」にしたがって翻訳しtranslatedにいれます。その時使ったコードをlangにいれます。
+{lang}がjaの時はdescriptionをそのままtranslatedにいれます。
 
 ## 必ずすべきこと
 1. {sentence_atmosphere}説明すること。全体で丁度{min_sentence_length}文の説明になるようにしてください。
@@ -190,6 +191,7 @@ STOP_REASON_PROMPT_TEMPLATE = """
 thoughtには、pedestrian_infoとobject_infoを元に、ロボットが止まった理由とどんなことをユーザに伝えるべきかを考えてください。
 最後に、その情報を元に、ロボットが止まった具体的な理由を説明してください（message）。messageは直接ユーザに読み上げる内容です。
 また、messageを言語コード「{lang}」にしたがって翻訳しtranslatedにいれます。その時使ったコードをlangにいれます。
+{lang}がjaの時はdescriptionをそのままtranslatedにいれます。
 
 ## ルール
 1. 日本語で簡潔に述べること。

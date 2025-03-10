@@ -86,6 +86,12 @@ if [[ -n "$CABOT_LAUNCH_DEV_PROFILE" ]] && [[ $profile = "prod" ]];  then
     profile=dev
 fi
 
+if [[ $profile = "test" ]]; then
+    com="docker compose -f $dcfile --profile test-db up -d"
+    echo $com
+    eval $com
+fi
+
 export EXTRA_ARGS="$@"
 com="docker compose -f $dcfile --profile ${profile} up 2>&1 | tee logs/$log_name.log"
 

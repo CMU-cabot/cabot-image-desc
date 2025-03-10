@@ -8,7 +8,7 @@ services:
       - dev
       - prod
     networks:
-      - chat_dic_network
+      - image_desc_network
 
   image_desc:
     image: cmucal/cabot-image_desc:${CABOT_LAUNCH_IMAGE_TAG:-latest}
@@ -28,7 +28,7 @@ services:
     depends_on:
       - mongo
     networks:
-      - chat_dic_network
+      - image_desc_network
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - "INITIAL_LOCATION=${INITIAL_LOCATION:-{\"lat\": 35.6241, \"lng\":139.7754}}"
@@ -79,7 +79,7 @@ services:
     volumes:
       - image_desc_mongodb_data-test:/data/db
     networks:
-      - chat_dic_network-test
+      - image_desc_network-test
 
   image_desc-test:
     image: cmucal/cabot-image_desc:${CABOT_LAUNCH_IMAGE_TAG:-latest}
@@ -98,7 +98,7 @@ services:
       - VERBOSE_OUTPUT=${VERBOSE_OUTPUT:-false}
       - EXTRA_ARGS
     networks:
-      - chat_dic_network-test
+      - image_desc_network-test
     profiles:
       - test
     volumes:
@@ -139,10 +139,10 @@ services:
         flake8 /test --count --show-source --max-line-length=200 --statistics
 
 networks:
-  chat_dic_network:
-    name: chat_dic_network
-  chat_dic_network-test:
-    name: chat_dic_network-test
+  image_desc_network:
+    name: image_desc_network
+  image_desc_network-test:
+    name: image_desc_network-test
 
 volumes:
   image_desc_mongodb_data:
