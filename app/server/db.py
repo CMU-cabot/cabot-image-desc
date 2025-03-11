@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Copyright (c) 2024  Carnegie Mellon University
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -21,22 +19,38 @@
 # THE SOFTWARE.
 
 import os
-import sys
-import json
 from pymongo import MongoClient
 
+# Configure MongoDB connection
 mongodb_host = os.getenv('MONGODB_HOST', 'mongodb://mongo:27017/')
 mongodb_name = os.getenv('MONGODB_NAME', 'geo_image_db')
 client = MongoClient(mongodb_host)
 db = client[mongodb_name]
-collection = db['images']
+image_collection = db['images']
 
-if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print('Usage: python export_data.py <filepath>')
-        sys.exit(1)
-    filepath = sys.argv[1]
+# Ensure the collection is indexed for geospatial queries
+image_collection.create_index([("location", "2dsphere")])
 
-    entries = list(collection.find({}))
-    with open(filepath, "w") as output_stream:
-        output_stream.write(json.dumps(entries, default=str))
+
+def get_description_by_lat_lng(lat, lng, floor, max_distance, max_count=0):
+    # ...existing code...
+    query = {
+        'location': {
+            '$near': {
+                '$geometry': {
+                    'type': 'Point',
+                    'coordinates': [lng, lat]
+                },
+                '$maxDistance': max_distance
+            }
+        }
+    }
+    if floor:
+        query['floor'] = floor
+    if max_count:
+        locations = list(image_collection.find(query).limit(max_count))
+    else:
+        locations = list(image_collection.find(query))
+    for location in locations:
+        location['_id'] = str(location['_id'])
+    return locations

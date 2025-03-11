@@ -4,8 +4,11 @@ services:
     container_name: geo_mdb
     volumes:
       - image_desc_mongodb_data:/data/db
+    profiles:
+      - dev
+      - prod
     networks:
-      - chat_dic_network
+      - image_desc_network
 
   image_desc:
     image: cmucal/cabot-image_desc:${CABOT_LAUNCH_IMAGE_TAG:-latest}
@@ -26,7 +29,7 @@ services:
     depends_on:
       - mongo
     networks:
-      - chat_dic_network
+      - image_desc_network
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - "INITIAL_LOCATION=${INITIAL_LOCATION:-{\"lat\": 35.6241, \"lng\":139.7754}}"
@@ -41,7 +44,7 @@ services:
   image_desc-prod:
     extends: image_desc
     volumes:
-      - ./logs:/app/logs
+      - ./logs:/logs
     profiles:
       - prod
 
@@ -49,16 +52,14 @@ services:
     extends: image_desc
     volumes:
       - ./app:/app
+      - ./logs:/logs
       - ./static:/static
-      - ./images:/app/images
     profiles:
       - dev
-    command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    command: ["uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
   image_desc-upload-prod:
     extends: image_desc
-    volumes:
-      - ./images:/app/images
     profiles:
       - upload
     command: bash
@@ -67,15 +68,85 @@ services:
     extends: image_desc
     volumes:
       - ./app:/app
-      - ./images:/app/images
     profiles:
       - upload
     command: bash
 
+  mongo-test:
+    image: mongo:4.4.25
+    container_name: geo_mdb-test
+    profiles:
+      - test-db
+    volumes:
+      - image_desc_mongodb_data-test:/data/db
+    networks:
+      - image_desc_network-test
+
+  image_desc-test:
+    image: cmucal/cabot-image_desc:${CABOT_LAUNCH_IMAGE_TAG:-latest}
+    build:
+      context: ./docker
+      additional_contexts:
+        src: ./
+      x-bake:
+        tags:
+          - ${REGISTRY:-cmucal}/cabot-image_desc
+        platforms:
+          - linux/amd64
+        output:
+          - type=registry
+    environment:
+      - VERBOSE_OUTPUT=${VERBOSE_OUTPUT:-false}
+      - EXTRA_ARGS
+    networks:
+      - image_desc_network-test
+    profiles:
+      - test
+    volumes:
+      - ./test:/test
+      - ./app:/app
+      - ./logs:/logs
+      - ./static:/static
+    working_dir: /
+    command:
+      - bash
+      - -c
+      - |
+        if [ "${VERBOSE_OUTPUT}" = "true" ]; then
+          pytest /test/test-app.py -vvv --log-cli-level=INFO ${EXTRA_ARGS};
+        else
+          pytest /test/test-app.py ${EXTRA_ARGS};
+        fi
+
+  image_desc-test-openai:
+    extends: image_desc-test
+    environment:
+      - OPENAI_API_KEY
+    profiles: !override ["openai"]
+
+  image_desc-lint:
+    extends: image_desc-test
+    profiles: !override ["lint"]
+    volumes:
+      - ./app:/app
+      - ./test:/test
+      - ./logs:/logs
+    working_dir: /
+    command:
+      - bash
+      - -c
+      - |
+        flake8 /app --count --show-source --max-line-length=200 --statistics && \
+        flake8 /test --count --show-source --max-line-length=200 --statistics
+
 networks:
-  chat_dic_network:
-    name: chat_dic_network
+  image_desc_network:
+    name: image_desc_network
+  image_desc_network-test:
+    name: image_desc_network-test
 
 volumes:
   image_desc_mongodb_data:
     name: image_desc_mongodb_data
+  image_desc_mongodb_data-test:
+    name: image_desc_mongodb_data-test

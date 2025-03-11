@@ -55,3 +55,32 @@ textarea {
 div.location {
     clear: both;
 }
+
+#navigation {
+    position: fixed;
+    top: 0px;
+    right: 0px;
+    width: 150px;
+    background-color: white;
+    padding: 10px;
+    z-index: 1000;
+    line-height: 2em;
+}
+
+#query, #query input {
+    padding: 10px;
+    margin: 10px;
+    text-align: center;
+}
+
+#result {
+    padding: 10px;
+    margin: 10px;
+}
+
+#preview {
+    padding: 10px;
+    margin: 10px;
+    text-align: center;
+    border: 1px solid gray;
+}

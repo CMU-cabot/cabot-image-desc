@@ -6,7 +6,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY --from=src ./app /app
 COPY --from=src ./static /static
 RUN mkdir -p /static_js_lib/ && curl https://unpkg.com/ol@7.3.0/dist/ol.js -o /static_js_lib/ol.js
+RUN curl -L https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js -o /static_js_lib/exif.min.js
 
 WORKDIR /app
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "server.app:app", "--host", "0.0.0.0", "--port", "8000"]
