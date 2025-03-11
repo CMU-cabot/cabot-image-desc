@@ -18,6 +18,7 @@ services:
           - ${REGISTRY:-cmucal}/cabot-image_desc
         platforms:
           - linux/amd64
+          - linux/arm64
         output:
           - type=registry
     ports:
