@@ -34,32 +34,19 @@ client = MongoClient(mongodb_host)
 db = client[mongodb_name]
 collection = db['images']
 
+
+def import_data(filepath):
+    with open(filepath) as input_stream:
+        for entry in json.load(input_stream):
+            id = entry["_id"]
+            entry["_id"] = ObjectId(id)
+            collection.replace_one({"_id": entry["_id"]}, entry, upsert=True)
+            print(f"{id} upserted")
+
+
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         print('Usage: python script.py <image_filepath>')
         sys.exit(1)
 
-    filepath = sys.argv[1]
-
-    with open(filepath) as input_stream:
-        data = json.load(input_stream)
-
-    for entry in data:
-        id = entry["_id"]
-        location = collection.find_one({"_id": ObjectId(id)})
-        if location:
-            update = {}
-            for key in entry.keys():
-                if key not in location or location[key] != entry[key]:
-                    if key == "_id":
-                        continue
-                    update[key] = entry[key]
-            collection.update_one(
-                {"_id": ObjectId(id)},
-                {"$set": update}
-            )
-            print(f"{id} updated {update}")
-        else:
-            print(f"{id} inserted")
-            entry["_id"] = ObjectId(id)
-            collection.insert_one(entry)
+    import_data(sys.argv[1])
