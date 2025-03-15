@@ -31,10 +31,12 @@ client = MongoClient(mongodb_host)
 db = client[mongodb_name]
 collection = db['images']
 
+
 def export_data(filepath):
     entries = list(collection.find({}))
     with open(filepath, "w") as output_stream:
         output_stream.write(json.dumps(entries, default=str))
+
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:

@@ -34,6 +34,7 @@ client = MongoClient(mongodb_host)
 db = client[mongodb_name]
 collection = db['images']
 
+
 def import_data(filepath):
     with open(filepath) as input_stream:
         for entry in json.load(input_stream):
@@ -41,6 +42,7 @@ def import_data(filepath):
             entry["_id"] = ObjectId(id)
             collection.replace_one({"_id": entry["_id"]}, entry, upsert=True)
             print(f"{id} upserted")
+
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
