@@ -42,24 +42,8 @@ if __name__ == '__main__':
     filepath = sys.argv[1]
 
     with open(filepath) as input_stream:
-        data = json.load(input_stream)
-
-    for entry in data:
-        id = entry["_id"]
-        location = collection.find_one({"_id": ObjectId(id)})
-        if location:
-            update = {}
-            for key in entry.keys():
-                if key not in location or location[key] != entry[key]:
-                    if key == "_id":
-                        continue
-                    update[key] = entry[key]
-            collection.update_one(
-                {"_id": ObjectId(id)},
-                {"$set": update}
-            )
-            print(f"{id} updated {update}")
-        else:
-            print(f"{id} inserted")
+        for entry in json.load(input_stream):
+            id = entry["_id"]
             entry["_id"] = ObjectId(id)
-            collection.insert_one(entry)
+            collection.replace_one({"_id": entry["_id"]}, entry, upsert=True)
+            print(f"{id} upserted")

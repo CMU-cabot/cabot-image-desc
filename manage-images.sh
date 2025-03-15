@@ -187,7 +187,7 @@ function upload_image() {
     local image=$(realpath $1)
 
     if [[ -z $image ]]; then
-        docker compose run --rm image_desc-upload-$PROFILE bash -c \
+        docker compose run --profile $PROFILE --rm image_desc-upload-$PROFILE bash -c \
             "./image_uploader.py $JSON $LIST"
         return
     fi
@@ -197,7 +197,7 @@ function upload_image() {
 
     blue "Uploading $image"
 
-    docker compose run --rm \
+    docker compose --profile $PROFILE run --rm \
       -v $image:/tmp/$image_name \
       -v $prompt:/tmp/prompt.txt \
       image_desc-upload-$PROFILE bash -c \
@@ -220,7 +220,7 @@ elif [[ -n $IMPORT ]]; then
         err "File not found: $IMPORT"
         exit 1
     fi
-    docker compose run --rm \
+    docker compose --profile $PROFILE run --rm \
       -v $(realpath $IMPORT):/tmp/import.json \
       image_desc-upload-$PROFILE bash -c \
         "./import_data.py /tmp/import.json"
