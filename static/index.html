@@ -17,11 +17,16 @@
     <div id="popup"></div>
     <div id="navigation">
         <a href="./list.html">Image List</a><br />
-        <a href="./test.html">Query Test</a>
+        <a href="./test.html">Query Test</a><br />
+        <button onclick="document.getElementById('download-images').click()">Export Images</button>
+        <a id="download-images" href="/export-images" download="images.json" style="display:none"></a>
+        <button onclick="document.getElementById('file-import').click()">Import Images</button>
+        <input id="file-import" type="file" style="display:none" onchange="importFile(this)"/>
     </div>
 
     <script src="js/lib/ol.js"></script>
     <script src="js/common.js"></script>
     <script src="js/index.js"></script>
+    <script src="js/import.js"></script>
 </body>
 </html>
