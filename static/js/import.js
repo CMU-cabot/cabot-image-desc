@@ -9,6 +9,9 @@ function importFile(fileInput) {
     }).then(response => {
         if (response.ok) {
             console.log('File successfully uploaded');
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
         } else {
             console.error('File upload failed');
         }
