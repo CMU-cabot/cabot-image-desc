@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logs</title>
+</head>
+<body>
+    <a href="/index.html">Image Map</a> |
+    <a href="/list.html">Image List</a> |
+    <a href="/test.html">Query Test</a>
+    {% if directories or files %}
+        {% if files %}
+            <p>{{ directory }}</p>
+        {% endif %}
+        <ul>
+            {% if directories %}
+                <p><input type="text" id="filterInput" placeholder="Search for directories.."></p>
+            {% endif %}
+            {% for d in directories %}
+                <li class="directory"><a href="/logs/{{ d }}">{{ d }}</a></li>
+            {% endfor %}
+            {% if files %}
+                <li><a href="/logs">[..]</a></li>
+            {% endif %}
+            {% for f in files %}
+                <li><a href="/logs/{{ directory }}/{{ f }}">{{ f }}</a></li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% if content %}
+        <p><a href="/logs/{{ directory }}">Back to {{ directory }}</a></p>
+        <pre style="background-color: #eee; padding: 10px; white-space: pre-wrap;">{{ content }}</pre>
+        {% for image in images %}
+            <img src="{{ image }}" />
+        {% endfor %}
+    {% endif %}
+    <script src="js/logs.js"></script>
+</body>
+</html>
