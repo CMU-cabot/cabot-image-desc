@@ -11,6 +11,9 @@ function doFilter() {
     localStorage.setItem('filter', filter);
 }
 
-document.getElementById('filterInput').value = localStorage.getItem('filter') || '';
-doFilter();
-document.getElementById('filterInput').addEventListener('input', doFilter);
+const filterInput = document.getElementById('filterInput');
+if (filterInput) {
+    filterInput.value = localStorage.getItem('filter') || '';
+    doFilter();
+    filterInput.addEventListener('input', doFilter);
+}
