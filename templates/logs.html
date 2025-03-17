@@ -30,9 +30,7 @@
         <p>
             <a href="/logs/{{ directory }}">Back to {{ directory }}</a>
         </p>
-        <pre style="background-color: #eee; padding: 10px; white-space: pre-wrap;">
-            {{ content }}
-        </pre>
+        <pre style="background-color: #eee; padding: 10px; white-space: pre-wrap;">{{ content }}</pre>
         {% for image in images %}
             <img src="{{ image }}" />
         {% endfor %}
