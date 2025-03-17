@@ -49,7 +49,7 @@ def logs(request: Request):
     def get_datetime(dir):
         try:
             return datetime.strptime(dir + "+0000", "%Y-%m-%d-%H-%M-%S%z")
-        except Exception as e:
+        except Exception:
             timestamp = os.path.getctime(os.path.join(logs_dir, dir))
             return datetime.fromtimestamp(timestamp, tz=timezone.utc)
 
