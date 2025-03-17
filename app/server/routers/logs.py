@@ -45,12 +45,14 @@ def logs(request: Request):
         raise HTTPException(status_code=500, detail="Could not access logs directory")
 
     directories.sort(reverse=True)
+
     def get_datetime(dir):
         try:
-            return datetime.strptime(dir+"+0000", "%Y-%m-%d-%H-%M-%S%z")
+            return datetime.strptime(dir + "+0000", "%Y-%m-%d-%H-%M-%S%z")
         except Exception as e:
             timestamp = os.path.getctime(os.path.join(logs_dir, dir))
             return datetime.fromtimestamp(timestamp, tz=timezone.utc)
+
     timestamps = [get_datetime(dir).isoformat() for dir in directories]
     return templates.TemplateResponse("logs.html", {"request": request, "directories": directories, "timestamps": timestamps})
 
