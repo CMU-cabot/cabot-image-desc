@@ -5,6 +5,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY --from=src ./app /app
 COPY --from=src ./static /static
+COPY --from=src ./templates /templates
 RUN mkdir -p /static_js_lib/ && curl https://cdn.jsdelivr.net/npm/ol@v7.3.0/dist/ol.js -o /static_js_lib/ol.js
 RUN curl -L https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js -o /static_js_lib/exif.min.js
 

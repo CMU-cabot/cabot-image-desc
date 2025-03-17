@@ -31,6 +31,7 @@ from .routers.auth import verify_api_key_or_cookie
 from .routers import locations
 from .routers import description
 from .routers import images
+from .routers import logs
 
 # Set up logging configuration to output to stderr
 logging.basicConfig(
@@ -84,6 +85,7 @@ app.include_router(auth.router)
 app.include_router(locations.router)
 app.include_router(description.router)
 app.include_router(images.router)
+app.include_router(logs.router)
 
 # Mount static files for serving HTML, JS, and CSS
 app.mount("/js/lib", StaticFiles(directory="/static_js_lib"), name="static/js/lib")
