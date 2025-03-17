@@ -9,28 +9,30 @@
     <a href="/index.html">Image Map</a> |
     <a href="/list.html">Image List</a> |
     <a href="/test.html">Query Test</a>
-    {% if directories or files %}
-        {% if files %}
-            <p>{{ directory }}</p>
-        {% endif %}
+    {% if directories %}
         <ul>
-            {% if directories %}
-                <p><input type="text" id="filterInput" placeholder="Search for directories.."></p>
-            {% endif %}
+            <input type="text" id="filterInput" placeholder="Search for directories.." size="25">
             {% for d in directories %}
                 <li class="directory"><a href="/logs/{{ d }}">{{ d }}</a></li>
             {% endfor %}
-            {% if files %}
-                <li><a href="/logs">[..]</a></li>
-            {% endif %}
+        </ul>
+    {% elif files %}
+        <p>
+            {{ directory }}
+        </p>
+        <ul>
+            <li><a href="/logs">[..]</a></li>
             {% for f in files %}
                 <li><a href="/logs/{{ directory }}/{{ f }}">{{ f }}</a></li>
             {% endfor %}
         </ul>
-    {% endif %}
-    {% if content %}
-        <p><a href="/logs/{{ directory }}">Back to {{ directory }}</a></p>
-        <pre style="background-color: #eee; padding: 10px; white-space: pre-wrap;">{{ content }}</pre>
+    {% elif content %}
+        <p>
+            <a href="/logs/{{ directory }}">Back to {{ directory }}</a>
+        </p>
+        <pre style="background-color: #eee; padding: 10px; white-space: pre-wrap;">
+            {{ content }}
+        </pre>
         {% for image in images %}
             <img src="{{ image }}" />
         {% endfor %}
