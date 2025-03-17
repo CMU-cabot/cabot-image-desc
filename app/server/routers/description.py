@@ -160,7 +160,7 @@ async def read_description_by_lat_lng(lat: float = Query(...),
     logger.info("Language: %s", lang)
 
     # log
-    date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    date = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d-%H-%M-%S")
     log_json(directory=date, name="params", data={
         "lat": lat,
         "lng": lng,
@@ -234,7 +234,7 @@ async def read_description_by_lat_lng_with_image(request: Request,
     logger.info("Language: %s", lang)
 
     # log
-    date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    date = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d-%H-%M-%S")
     log_json(directory=date, name="images", data=images)
     log_json(directory=date, name="params", data={
         "lat": lat,
@@ -310,7 +310,7 @@ async def stop_reason(request: Request,
     logger.info("Language: %s", lang)
 
     # log
-    date = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+    date = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d-%H-%M-%S")
     log_json(directory=date, name="images", data=temp)
     log_json(
         directory=date,

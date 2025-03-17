@@ -1,3 +1,8 @@
+document.querySelectorAll('a[timestamp]').forEach(item => {
+    const date = new Date(item.getAttribute('timestamp'));
+    item.textContent = `${item.textContent} [${date.toLocaleString()}]`;
+});
+
 function doFilter() {
     const filter = document.getElementById('filterInput').value.toUpperCase();
     document.querySelectorAll('li.directory').forEach(item => {

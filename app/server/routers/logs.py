@@ -21,6 +21,7 @@
 import json
 import logging
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
@@ -43,7 +44,15 @@ def logs(request: Request):
         logger.error(f"Error accessing logs directory: {e}")
         raise HTTPException(status_code=500, detail="Could not access logs directory")
 
-    return templates.TemplateResponse("logs.html", {"request": request, "directories": sorted(directories, reverse=True)})
+    directories.sort(reverse=True)
+    def get_datetime(dir):
+        try:
+            return datetime.strptime(dir+"+0000", "%Y-%m-%d-%H-%M-%S%z")
+        except Exception as e:
+            timestamp = os.path.getctime(os.path.join(logs_dir, dir))
+            return datetime.fromtimestamp(timestamp, tz=timezone.utc)
+    timestamps = [get_datetime(dir).isoformat() for dir in directories]
+    return templates.TemplateResponse("logs.html", {"request": request, "directories": directories, "timestamps": timestamps})
 
 
 @router.get('/logs/{directory}', dependencies=[Depends(verify_api_key_or_cookie)], response_class=HTMLResponse)
