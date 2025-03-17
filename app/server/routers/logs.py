@@ -47,7 +47,7 @@ def logs(request: Request):
 
 
 @router.get('/logs/{directory}', dependencies=[Depends(verify_api_key_or_cookie)], response_class=HTMLResponse)
-def logs(directory: str, request: Request):
+def logs_list_files(directory: str, request: Request):
     dir = os.path.join(logs_dir, directory)
     try:
         files = [f for f in os.listdir(dir) if os.path.isfile(os.path.join(dir, f))]
@@ -59,7 +59,7 @@ def logs(directory: str, request: Request):
 
 
 @router.get('/logs/{directory}/{file}', dependencies=[Depends(verify_api_key_or_cookie)], response_class=HTMLResponse)
-def logs(directory: str, file: str, request: Request):
+def logs_show_file(directory: str, file: str, request: Request):
     file_path = os.path.join(logs_dir, directory, file)
     images = []
 
