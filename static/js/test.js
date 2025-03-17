@@ -27,7 +27,7 @@ window.lastImageCoordinates = {
 };
 
 // Renamed helper function to collect common request data from preview.
-function prepareRequestData(maxDistance) {
+function prepareRequestData(maxDistance, sentenceLength, useLiveImageOnly) {
     const previewImg = document.getElementById("previewImg");
     if (!previewImg || !previewImg.src) {
         alert("Preview image not available. Please select an image to preview.");
@@ -51,7 +51,9 @@ function prepareRequestData(maxDistance) {
         max_distance: maxDistance,
         length_index: "0",
         distance_to_travel: "100",
-        lang: lang
+        lang: lang,
+        sentence_length: sentenceLength,
+        use_live_image_only: useLiveImageOnly,
     });
 
     return { payload, params };
@@ -78,7 +80,9 @@ function fetchAndDisplayResult(endpoint, params, payload) {
 
 function surround() {
     // Use common request data
-    const reqData = prepareRequestData("15");
+    const sentenceLength = document.getElementById("sentenceLengthSelect").value;
+    const useLiveImageOnly = document.getElementById("useLiveImageOnlyCheck").checked;
+    const reqData = prepareRequestData("15", sentenceLength, useLiveImageOnly);
     if (!reqData) return;
     const { payload, params } = reqData;
 

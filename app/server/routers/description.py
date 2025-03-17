@@ -130,17 +130,14 @@ async def read_description_by_lat_lng(lat: float = Query(...),
                                       max_count: Optional[int] = Query(10),
                                       max_distance: Optional[float] = Query(100),
                                       lang: Optional[str] = Query("ja"),
+                                      sentence_length: Optional[int] = Query(3),
                                       ):
     logger.info("description get")
     locations = get_description_by_lat_lng(lat, lng, floor, max_distance, max_count)
 
     location_per_directions, past_explanations = preprocess_descriptions(locations, rotation, lat, lng, max_distance)
 
-    request_length_index = 3  # which is the shortest press to the button UI
-    distance_to_travel = 51  # meter
-
-    prompt = construct_prompt_for_image_description(request_length_index=request_length_index,
-                                                    distance_to_travel=distance_to_travel,
+    prompt = construct_prompt_for_image_description(sentence_length=sentence_length,
                                                     front=location_per_directions["front"]["description"],
                                                     right=location_per_directions["right"]["description"],
                                                     left=location_per_directions["left"]["description"],
@@ -167,7 +164,7 @@ async def read_description_by_lat_lng(lat: float = Query(...),
         "rotation": rotation,
         "max_count": max_count,
         "max_distance": max_distance,
-        "distance_to_travel": distance_to_travel,
+        "sentence_length": sentence_length,
         "prompt": prompt,
         "lang": lang,
     })
@@ -194,12 +191,14 @@ async def read_description_by_lat_lng_with_image(request: Request,
                                                  rotation: float = Query(...),
                                                  max_count: Optional[int] = Query(10),
                                                  max_distance: Optional[float] = Query(15),
-                                                 length_index: Optional[int] = Query(0),  # which is the shortest press to the button UI
-                                                 distance_to_travel: Optional[float] = Query(100),  # meter
                                                  lang: Optional[str] = Query("ja"),
+                                                 sentence_length: Optional[int] = Query(3),
+                                                 use_live_image_only: Optional[bool] = Query(False),
                                                  ):
     logger.info("description_with_live_image post")
-    locations = get_description_by_lat_lng(lat, lng, floor, max_distance, max_count)
+    locations = []
+    if not use_live_image_only:
+        locations = get_description_by_lat_lng(lat, lng, floor, max_distance, max_count)
 
     images = await request.json()
 
@@ -212,8 +211,7 @@ async def read_description_by_lat_lng_with_image(request: Request,
         tags += f"{count}枚目: {position}\n"
         count += 1
 
-    prompt = construct_prompt_for_image_description(request_length_index=length_index,
-                                                    distance_to_travel=distance_to_travel,
+    prompt = construct_prompt_for_image_description(sentence_length=sentence_length,
                                                     front=location_per_directions["front"]["description"],
                                                     right=location_per_directions["right"]["description"],
                                                     left=location_per_directions["left"]["description"],
@@ -242,8 +240,8 @@ async def read_description_by_lat_lng_with_image(request: Request,
         "rotation": rotation,
         "max_count": max_count,
         "max_distance": max_distance,
-        "length_index": length_index,
-        "distance_to_travel": distance_to_travel,
+        "sentence_length": sentence_length,
+        "use_live_image_only": use_live_image_only,
         "prompt": prompt,
         "lang": lang,
     })
@@ -263,40 +261,20 @@ async def read_description_by_lat_lng_with_image(request: Request,
 
 @router.post("/stop_reason", dependencies=[Depends(verify_api_key_or_cookie)])
 async def stop_reason(request: Request,
-                      lat: float = Query(...),
-                      lng: float = Query(...),
-                      floor: int = Query(0),
-                      rotation: float = Query(...),
-                      max_count: Optional[int] = Query(10),
-                      max_distance: Optional[float] = Query(100),
-                      length_index: Optional[int] = Query(0),
-                      distance_to_travel: Optional[float] = Query(100),  # meter
                       lang: Optional[str] = Query("ja"),
                       ):
     logger.info("stop_reason post")
-    locations = get_description_by_lat_lng(lat, lng, floor, max_distance, max_count)
 
     images = await request.json()
 
-    _, past_explanations = preprocess_descriptions(locations, rotation, lat, lng, max_distance)
-
-    count = 1
-    tags = ""
     temp = []
     for image in images:
         position = image["position"]
         if "front" != position:
             continue
-        tags += f"{count}枚目: {position}\n"
-        count += 1
         temp.append(image)
 
-    prompt = construct_prompt_for_stop_reason(request_length_index=length_index,
-                                              distance_to_travel=distance_to_travel,
-                                              past_explanations=past_explanations,
-                                              image_tags=tags,
-                                              lang=lang,
-                                              )
+    prompt = construct_prompt_for_stop_reason(lang=lang)
 
     st = time.time()
     (original_result, query) = await gpt_agent.query_with_images(prompt=prompt, images=temp, response_format=StopReason)
@@ -317,13 +295,6 @@ async def stop_reason(request: Request,
         name="params",
         data={
             "mode": "stop-reason",
-            "lat": lat,
-            "lng": lng,
-            "rotation": rotation,
-            "max_count": max_count,
-            "max_distance": max_distance,
-            "length_index": length_index,
-            "distance_to_travel": distance_to_travel,
             "prompt": prompt,
             "lang": lang,
         },
@@ -336,7 +307,6 @@ async def stop_reason(request: Request,
     log_image(directory=date, position="front", images=temp)
 
     return {
-        "locations": locations,
         "elapsed_time": elapsed_time,
         "description": description,
         "translated": translated,
