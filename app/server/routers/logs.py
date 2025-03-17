@@ -88,6 +88,7 @@ def logs_show_file(directory: str, file: str, request: Request):
             content = json.loads(content)
             extract_images(content)
             content = json.dumps(content, ensure_ascii=False, indent=4)
+            content = content.replace("\\n", "\n")
         except Exception as e:
             logger.error(f"Error parsing {file_path}: {e}")
     return templates.TemplateResponse("logs.html", {"request": request, "directory": directory, "content": content, "images": images})
