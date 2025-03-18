@@ -17,14 +17,28 @@
     <form id="imageForm" enctype="multipart/form-data">
         <input type="file" id="imageInput" accept="image/*"><br/>
         <!-- New language select field -->
-        <select id="languageSelect" name="language">
-            <option value="ja">Japanese</option>
-            <option value="en">English</option>
-            <option value="zh">Chinese</option>
-            <option value="ko">Korean</option>
-        </select>
-        <button type="button" onclick="surround()">Surround</button>
-        <button type="button" onclick="stopReason()">Stop Reason</button>
+        <div>
+            <select id="languageSelect" name="language">
+                <option value="ja">Japanese</option>
+                <option value="en">English</option>
+                <option value="zh">Chinese</option>
+                <option value="ko">Korean</option>
+            </select>
+        </div>
+        <div>
+            <select id="sentenceLengthSelect" name="sentenceLength">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+            </select>
+            <label for="useLiveImageOnlyCheck">Use only live image</label>
+            <input type="checkbox" id="useLiveImageOnlyCheck" name="useLiveImageOnly" />
+            <button type="button" onclick="surround()">Surround</button>
+            <br>
+            <button type="button" onclick="stopReason()">Stop Reason</button>
+        </div>
     </form>
     </div>
     <pre id="result"></pre>

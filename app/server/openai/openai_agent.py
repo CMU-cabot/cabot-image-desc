@@ -103,19 +103,11 @@ def determine_sentence_length(request_length, distance_to_travel):
         return 3 + sentence_num_to_add
 
 
-def sentence_atmosphere_in_Japanese(request_length, distance_to_travel):
-    if request_length == 0:
+def sentence_atmosphere_in_Japanese(sentence_length: int) -> str:
+    if sentence_length <= 2:
         return "とても簡潔に、各物体の名前と位置だけ"
-    elif request_length == 1:
-        if distance_to_travel < 10:
-            return "とても簡潔に、各物体の名前と位置だけ"
-        else:
-            return "各物体の位置や詳細について参照しつつ"
     else:
-        if distance_to_travel < 10:
-            return "とても簡潔に、各物体の名前と位置だけ"
-        else:
-            return "各物体の詳細や位置、推測できることや主観的な形容詞を交えつつ詳しく"
+        return "各物体の詳細や位置、推測できることや主観的な形容詞を交えつつ詳しく"
 
 
 def determine_scene_description_style(sentence_length: int, force_use_default_style: bool = True) -> str:
@@ -128,8 +120,7 @@ def determine_scene_description_style(sentence_length: int, force_use_default_st
     return scene_desc_style
 
 
-def construct_prompt_for_image_description(request_length_index=0,
-                                           distance_to_travel=0,
+def construct_prompt_for_image_description(sentence_length=3,
                                            front="",
                                            right="",
                                            left="",
@@ -145,13 +136,9 @@ def construct_prompt_for_image_description(request_length_index=0,
         left = left.replace("\n", " ")
 
     prompt_template = DESCRIPTION_PROMPT_TEMPLATE
-    sentence_length = determine_sentence_length(request_length_index, distance_to_travel)
 
-    sentence_atmosphere = sentence_atmosphere_in_Japanese(request_length_index, distance_to_travel)
+    sentence_atmosphere = sentence_atmosphere_in_Japanese(sentence_length)
     scene_desc_style = determine_scene_description_style(sentence_length, force_use_default_style=True)
-
-    if sentence_length == 1:
-        front = right = left = ""  # when only two sentences are requested, we dont want to add right and left sentences because LLM get affected by many information
 
     prompt = prompt_template.format(front=front,
                                     right=right,
@@ -186,9 +173,10 @@ STOP_REASON_PROMPT_TEMPLATE = """
 # 指示
 視覚障害者を案内しているロボットが案内中に止まってしまいました。
 その理由をロボットの正面画像を参照しつつ説明してください。
-まず最初に近くにいる人の人数を数えて、それらの人がどこで（例: 左2メートル、前方3メートル）それぞれどの方向を向いて何をしてるかを把握してください（pedestrian_info）。人がいない場合は「人はいません」と答えてください。
+まず最初に、すぐ近くにいる人の人数を数えて、どの方向を向いて何をしてるかを把握してください（pedestrian_info）。
+遠くにしか人がいない場合は「遠くに人が居ます」、全く人がいない場合は「人はいません」と答えてください。
 その次に近くの障害物の数とそれらの種類を把握してください（object_info）。障害物がない場合は「障害物はありません」と答えてください。
-thoughtには、pedestrian_infoとobject_infoを元に、ロボットが止まった理由とどんなことをユーザに伝えるべきかを考えてください。
+thoughtには、pedestrian_infoとobject_infoで、近くに人や障害物がある場合、ロボットが止まった理由とどんなことをユーザに伝えるべきかを考えてください。
 最後に、その情報を元に、ロボットが止まった具体的な理由を説明してください（message）。messageは直接ユーザに読み上げる内容です。
 また、messageを言語コード「{lang}」にしたがって翻訳しtranslatedにいれます。その時使ったコードをlangにいれます。
 {lang}がjaの時はdescriptionをそのままtranslatedにいれます。
@@ -213,55 +201,9 @@ thoughtには、pedestrian_infoとobject_infoを元に、ロボットが止ま�
 """
 
 
-def construct_prompt_for_stop_reason(request_length_index=0,
-                                     distance_to_travel=0,
-                                     front="",
-                                     right="",
-                                     left="",
-                                     past_explanations="",
-                                     image_tags="",
-                                     lang="ja",
-                                     ):
-    if front != "":
-        front = front.replace("\n", " ")
-    if right != "":
-        right = right.replace("\n", " ")
-        right = ""  # ignore
-    if left != "":
-        left = left.replace("\n", " ")
-        left = ""  # ignore
-
+def construct_prompt_for_stop_reason(lang="ja"):
     prompt_template = STOP_REASON_PROMPT_TEMPLATE
-    sentence_length = determine_sentence_length(
-        request_length_index, distance_to_travel
-    )
-
-    sentence_atmosphere = sentence_atmosphere_in_Japanese(
-        request_length_index, distance_to_travel
-    )
-    scene_desc_style = determine_scene_description_style(
-        sentence_length, force_use_default_style=True
-    )
-
-    if sentence_length == 1:
-        front = right = left = (
-            ""  # when only two sentences are requested, we dont want to add right and left sentences because LLM get affected by many information
-        )
-
-    prompt = prompt_template.format(front=front,
-                                    right=right,
-                                    left=left,
-                                    min_sentence_length=sentence_length,
-                                    max_sentence_length=sentence_length + 1,
-                                    image_tags=image_tags,
-                                    sentence_atmosphere=sentence_atmosphere,
-                                    scene_description_style=scene_desc_style,
-                                    lang=lang,
-                                    )
-
-    if USE_PAST_EXPLANATIONS and past_explanations:
-        prompt += PAST_EXPLANATIONS_TEMPLATE.format(past_explanations=past_explanations)
-
+    prompt = prompt_template.format(lang=lang)
     return prompt
 
 

@@ -84,3 +84,11 @@ div.location {
     text-align: center;
     border: 1px solid gray;
 }
+
+form div {
+    display: inline-block;
+    vertical-align: middle;
+    text-align: right;
+    padding: 10px;
+    border: 1px solid gray;
+}
