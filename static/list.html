@@ -22,6 +22,7 @@
         <a id="download-images" href="/export-images" download="images.json" style="display:none"></a>
         <button onclick="document.getElementById('file-import').click()">Import Images</button>
         <input id="file-import" type="file" style="display:none" onchange="importFile(this)"/>
+        <button onclick="confirm('Are you sure you want to delete all images?') && deleteImage()">Delete All Images</button>
     </div>
 
     <script src="js/common.js"></script>

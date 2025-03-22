@@ -25,8 +25,9 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from starlette.background import BackgroundTask
 from .auth import verify_api_key_or_cookie
+from bson import ObjectId
 from export_data import export_data
-from import_data import import_data
+from import_data import import_data, collection
 
 
 logger = logging.getLogger(__name__)
@@ -56,3 +57,15 @@ async def import_images(request: Request, background_tasks: BackgroundTasks):
         raise HTTPException(status_code=400, detail='file must be of type application/json')
     background_tasks.add_task(import_task, file)
     return JSONResponse(content={'message': 'success'}, status_code=201)
+
+
+@router.delete('/image', dependencies=[Depends(verify_api_key_or_cookie)])
+async def delete_images(background_tasks: BackgroundTasks):
+    background_tasks.add_task(collection.delete_many, {})
+    return JSONResponse(content={'message': 'success'}, status_code=202)
+
+
+@router.delete('/image/{id}', dependencies=[Depends(verify_api_key_or_cookie)])
+async def delete_image(id: str, background_tasks: BackgroundTasks):
+    background_tasks.add_task(collection.delete_one, {'_id': ObjectId(id)})
+    return JSONResponse(content={'message': 'success'}, status_code=202)

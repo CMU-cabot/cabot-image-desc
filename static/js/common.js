@@ -98,6 +98,7 @@ function showLocation(location, div) {
     // Display the information in the popup
     div.innerHTML = `
         <img src="${image}" alt="Image" style="max-width: 200px; max-height: 200px; float: left; margin: 0px 10px 10px 0px;">
+        <button onclick="confirm('Are you sure you want to delete this image?') && deleteImage('${id}')">Delete Image</button>
         <strong>${filename}</strong> ${date} <br>
         <strong>Description:</strong> ${descriptionHTML} <br>
         <strong>Orientation:</strong> ${orientation} <br>
