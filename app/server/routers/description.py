@@ -122,6 +122,16 @@ def preprocess_descriptions(locations, rotation, lat, lng, max_distance):
     return location_per_directions, past_explanations
 
 
+def parsed_value(result, key):
+    try:
+        return getattr(result.choices[0].message.parsed, key)
+    except Exception as e:
+        if not hasattr(result, "error"):
+            setattr(result, "error", str(e))
+            result.obj["error"] = str(e)
+        return f"Error: No {key}"
+
+
 @router.get('/description', dependencies=[Depends(verify_api_key_or_cookie)])
 async def read_description_by_lat_lng(lat: float = Query(...),
                                       lng: float = Query(...),
@@ -148,9 +158,9 @@ async def read_description_by_lat_lng(lat: float = Query(...),
     st = time.time()
     (original_result, query) = await gpt_agent.query_with_images(prompt=prompt, response_format=TranslatedDescription)
     elapsed_time = time.time() - st
-    description = original_result.choices[0].message.parsed.description
-    translated = original_result.choices[0].message.parsed.translated
-    lang = original_result.choices[0].message.parsed.lang
+    description = parsed_value(original_result, "description")
+    translated = parsed_value(original_result, "translated")
+    lang = parsed_value(original_result, "lang")
     logger.info("Time taken: %s", elapsed_time)
     logger.info("Generated description: %s", description)
     logger.info("Translated description: %s", translated)
@@ -226,9 +236,9 @@ async def read_description_by_lat_lng_with_image(request: Request,
     st = time.time()
     (original_result, query) = await gpt_agent.query_with_images(prompt=prompt, images=images, response_format=TranslatedDescription)
     elapsed_time = time.time() - st
-    description = original_result.choices[0].message.parsed.description
-    translated = original_result.choices[0].message.parsed.translated
-    lang = original_result.choices[0].message.parsed.lang
+    description = parsed_value(original_result, "description")
+    translated = parsed_value(original_result, "translated")
+    lang = parsed_value(original_result, "lang")
     logger.info("Time taken: %s", elapsed_time)
     logger.info("Generated description: %s", description)
     logger.info("Translated description: %s", translated)
@@ -285,9 +295,9 @@ async def stop_reason(request: Request,
     st = time.time()
     (original_result, query) = await gpt_agent.query_with_images(prompt=prompt, images=temp, response_format=StopReason)
     elapsed_time = time.time() - st
-    description = original_result.choices[0].message.parsed.message
-    translated = original_result.choices[0].message.parsed.translated
-    lang = original_result.choices[0].message.parsed.lang
+    description = parsed_value(original_result, "message")
+    translated = parsed_value(original_result, "translated")
+    lang = parsed_value(original_result, "lang")
     logger.info("Time taken: %s", elapsed_time)
     logger.info("Generated description: %s", description)
     logger.info("Translated description: %s", translated)
