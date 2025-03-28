@@ -101,3 +101,14 @@ div.location:not(:last-child) {
     padding-bottom: 10px;
     border-bottom: 1px solid #888;
 }
+
+div#version {
+    font-family: monospace;
+    font-size: 0.8em;
+    color: #888;
+    position: absolute;
+    right: 0px;
+    top: 0px;
+    padding: 5px;
+    line-height: 1em;
+}

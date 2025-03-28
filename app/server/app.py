@@ -76,7 +76,7 @@ def read_file(filename):
         logger.error(f"File {filename} not found.")
         return None
     initial_location = os.getenv("INITIAL_LOCATION", '{"lat": 35.62414166666667, "lng": 139.77542222222223, "floor": 1}')
-    html_content = file_path.read_text().replace("INITIAL_LOCATION_PLACEHOLDER", initial_location)
+    html_content = file_path.read_text().replace("INITIAL_LOCATION_PLACEHOLDER", initial_location).replace("VERSION_PLACEHOLDER", version)
     return html_content
 
 
@@ -91,3 +91,16 @@ app.include_router(logs.router)
 app.mount("/js/lib", StaticFiles(directory="/static_js_lib"), name="static/js/lib")
 # This should be last to avoid conflicts with other routes
 app.mount("/", StaticFiles(directory="/static"), name="static")
+
+# Read version information from version.txt
+version_file_path = Path("/app/version.txt")
+version = "unknown"
+if version_file_path.exists():
+    try:
+        with version_file_path.open("r") as version_file:
+            version = version_file.read().strip()
+            logger.info(f"Application version: {version}")
+    except Exception as e:
+        logger.error(f"Failed to read version file: {e}")
+else:
+    logger.warning("Version file not found.")
