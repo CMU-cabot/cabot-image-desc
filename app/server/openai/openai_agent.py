@@ -350,9 +350,28 @@ class GPTAgent:
             "max_tokens": max_tokens
         }
         # Making the API call
-        if response_format:
-            query2 = {**query, **{"response_format": response_format}}
-            response = await self.client.beta.chat.completions.parse(**query2)
-        else:
-            response = await self.client.chat.completions.create(**query)
+        try:
+            if response_format:
+                query2 = {**query, **{"response_format": response_format}}
+                response = await self.client.beta.chat.completions.parse(**query2)
+            else:
+                response = await self.client.chat.completions.create(**query)
+        except Exception as e:
+            response = DummyOpenAI.Chat.Completions.DictToObject(
+                {
+                    "error": str(e),
+                    "choices": [
+                        {
+                            "message": {
+                                "parsed": {
+                                    "description": "dummy",
+                                    "message": "dummy",
+                                    "translated": "dummy",
+                                    "lang": "dummy",
+                                }
+                            }
+                        }
+                    ],
+                }
+            )
         return (response, query)

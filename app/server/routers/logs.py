@@ -61,7 +61,7 @@ def logs(request: Request):
 def logs_list_files(directory: str, request: Request):
     dir = os.path.join(logs_dir, directory)
     try:
-        files = [f for f in os.listdir(dir) if os.path.isfile(os.path.join(dir, f))]
+        files = [f for f in os.listdir(dir) if os.path.isfile(os.path.join(dir, f)) and not f.endswith(".jpg")]
     except Exception as e:
         logger.error(f"Error accessing logs file: {e}")
         raise HTTPException(status_code=500, detail="Could not access logs file")
