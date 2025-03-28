@@ -25,7 +25,7 @@ import logging
 import math
 import os
 import time
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, HTTPException
 from typing import Optional
 
 # Import required functions/classes from openai_agent and auth
@@ -173,6 +173,9 @@ async def read_description_by_lat_lng(lat: float = Query(...),
     log_json(directory=date, name="locations", data=locations)
     log_json(directory=date, name="openai-response", data=json.loads(original_result.model_dump_json()))
 
+    if hasattr(original_result, "error"):
+        raise HTTPException(status_code=400, detail=original_result.error)
+
     return {
         'locations': locations,
         'elapsed_time': elapsed_time,
@@ -250,6 +253,9 @@ async def read_description_by_lat_lng_with_image(request: Request,
     log_json(directory=date, name="locations", data=locations)
     log_json(directory=date, name="openai-response", data=json.loads(original_result.model_dump_json()))
 
+    if hasattr(original_result, "error"):
+        raise HTTPException(status_code=400, detail=original_result.error)
+
     return {
         'locations': locations,
         'elapsed_time': elapsed_time,
@@ -305,6 +311,9 @@ async def stop_reason(request: Request,
         directory=date, name="openai-response", data=json.loads(original_result.model_dump_json())
     )
     log_image(directory=date, position="front", images=temp)
+
+    if hasattr(original_result, "error"):
+        raise HTTPException(status_code=400, detail=original_result.error)
 
     return {
         "elapsed_time": elapsed_time,

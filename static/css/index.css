@@ -92,3 +92,12 @@ form div {
     padding: 10px;
     border: 1px solid gray;
 }
+
+div.location {
+    margin: 10px 5px;
+}
+
+div.location:not(:last-child) {
+    padding-bottom: 10px;
+    border-bottom: 1px solid #888;
+}
