@@ -179,7 +179,7 @@ STOP_REASON_PROMPT_TEMPLATE = """
 thoughtには、pedestrian_infoとobject_infoで、近くに人や障害物がある場合、ロボットが止まった理由とどんなことをユーザに伝えるべきかを考えてください。
 最後に、その情報を元に、ロボットが止まった具体的な理由を説明してください（message）。messageは直接ユーザに読み上げる内容です。
 
-
+# 翻訳（必須）
 また、messageを言語コード「{lang}」にしたがって翻訳しtranslatedにいれます。その時使ったコードをlangにいれます。
 {lang}がjaの時はdescriptionをそのままtranslatedにいれます。
 
