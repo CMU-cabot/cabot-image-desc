@@ -16,6 +16,7 @@ idna==3.10
 jiter==0.8.2
 Jinja2==3.1.6
 numpy==2.0.2
+ollama==0.5.1
 openai==1.65.3
 opencv-python-headless==4.11.0.86
 piexif==1.1.3

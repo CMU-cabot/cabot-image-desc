@@ -30,13 +30,24 @@ from typing import Optional
 
 # Import required functions/classes from openai_agent and auth
 from ..openai.openai_agent import GPTAgent
-from ..openai.openai_agent import TranslatedDescription, construct_prompt_for_image_description
-from ..openai.openai_agent import StopReason, construct_prompt_for_stop_reason
+from ..openai.openai_agent import TranslatedDescription
+from ..openai.openai_agent import StopReason
+from ..agent.ollama_agent import OllamaAgent, Ollama2StepAgent
 from .auth import verify_api_key_or_cookie
 from ..db import get_description_by_lat_lng
 
 router = APIRouter()
-gpt_agent = GPTAgent()
+
+LLM_AGENT = os.environ.get("LLM_AGENT", "openai")
+
+if LLM_AGENT == "openai":
+    llm_agent = GPTAgent()
+elif LLM_AGENT == "ollama":
+    llm_agent = OllamaAgent()
+elif LLM_AGENT == "ollama-2step":
+    llm_agent = Ollama2StepAgent()
+else:
+    raise ValueError("Please specify valid LLM_AGENT")
 
 logger = logging.getLogger(__name__)
 
@@ -113,18 +124,22 @@ def preprocess_descriptions(locations, rotation, lat, lng, max_distance):
         if distance < location_per_directions[direction]["distance"]:
             location_per_directions[direction] = location
     past_explanations = ""
-    for past_description in gpt_agent.past_descriptions.copy():
+    for past_description in llm_agent.past_descriptions.copy():
         rel_x, rel_y = get_relative_coordinates(lat, lng, past_description["location"]["lat"], past_description["location"]["lng"], rotation)
         if math.sqrt(rel_x ** 2 + rel_y ** 2) < max_distance:
             past_explanations += past_description["description"] + "\n"
         else:
-            gpt_agent.past_descriptions.remove(past_description)
+            llm_agent.past_descriptions.remove(past_description)
     return location_per_directions, past_explanations
 
 
 def parsed_value(result, key):
     try:
-        return getattr(result.choices[0].message.parsed, key)
+        try:
+            return getattr(result.choices[0].message.parsed, key)
+        except Exception as e:
+            import json
+            return json.loads(result.message.content)[key]
     except Exception as e:
         if not hasattr(result, "error"):
             setattr(result, "error", str(e))
@@ -147,7 +162,7 @@ async def read_description_by_lat_lng(lat: float = Query(...),
 
     location_per_directions, past_explanations = preprocess_descriptions(locations, rotation, lat, lng, max_distance)
 
-    prompt = construct_prompt_for_image_description(sentence_length=sentence_length,
+    prompt = llm_agent.construct_prompt_for_image_description(sentence_length=sentence_length,
                                                     front=location_per_directions["front"]["description"],
                                                     right=location_per_directions["right"]["description"],
                                                     left=location_per_directions["left"]["description"],
@@ -156,7 +171,7 @@ async def read_description_by_lat_lng(lat: float = Query(...),
                                                     )
 
     st = time.time()
-    (original_result, query) = await gpt_agent.query_with_images(prompt=prompt, response_format=TranslatedDescription)
+    (original_result, query) = await llm_agent.query_with_images(prompt=prompt, response_format=TranslatedDescription)
     elapsed_time = time.time() - st
     description = parsed_value(original_result, "description")
     translated = parsed_value(original_result, "translated")
@@ -178,10 +193,10 @@ async def read_description_by_lat_lng(lat: float = Query(...),
         "prompt": prompt,
         "lang": lang,
     })
-    log_json(directory=date, name="openai-query", data=query)
-    log_json(directory=date, name="openai-prompt", data=prompt)
     log_json(directory=date, name="locations", data=locations)
-    log_json(directory=date, name="openai-response", data=json.loads(original_result.model_dump_json()))
+    log_json(directory=date, name=LLM_AGENT+"-query", data=query)
+    log_json(directory=date, name=LLM_AGENT+"-prompt", data=prompt)
+    log_json(directory=date, name=LLM_AGENT+"-response", data=json.loads(original_result.model_dump_json()))
 
     if hasattr(original_result, "error"):
         raise HTTPException(status_code=400, detail=original_result.error)
@@ -224,7 +239,7 @@ async def read_description_by_lat_lng_with_image(request: Request,
         tags += f"{count}枚目: {position}\n"
         count += 1
 
-    prompt = construct_prompt_for_image_description(sentence_length=sentence_length,
+    prompt = llm_agent.construct_prompt_for_image_description(sentence_length=sentence_length,
                                                     front=location_per_directions["front"]["description"],
                                                     right=location_per_directions["right"]["description"],
                                                     left=location_per_directions["left"]["description"],
@@ -234,7 +249,7 @@ async def read_description_by_lat_lng_with_image(request: Request,
                                                     )
 
     st = time.time()
-    (original_result, query) = await gpt_agent.query_with_images(prompt=prompt, images=images, response_format=TranslatedDescription)
+    (original_result, query) = await llm_agent.query_with_images(prompt=prompt, images=images, response_format=TranslatedDescription)
     elapsed_time = time.time() - st
     description = parsed_value(original_result, "description")
     translated = parsed_value(original_result, "translated")
@@ -258,10 +273,10 @@ async def read_description_by_lat_lng_with_image(request: Request,
         "prompt": prompt,
         "lang": lang,
     })
-    log_json(directory=date, name="openai-query", data=query)
-    log_json(directory=date, name="openai-prompt", data=prompt)
     log_json(directory=date, name="locations", data=locations)
-    log_json(directory=date, name="openai-response", data=json.loads(original_result.model_dump_json()))
+    log_json(directory=date, name=LLM_AGENT+"-query", data=query)
+    log_json(directory=date, name=LLM_AGENT+"-prompt", data=prompt)
+    log_json(directory=date, name=LLM_AGENT+"-response", data=json.loads(original_result.model_dump_json()))
 
     if hasattr(original_result, "error"):
         raise HTTPException(status_code=400, detail=original_result.error)
@@ -290,10 +305,10 @@ async def stop_reason(request: Request,
             continue
         temp.append(image)
 
-    prompt = construct_prompt_for_stop_reason(lang=lang)
+    prompt = llm_agent.construct_prompt_for_stop_reason(lang=lang)
 
     st = time.time()
-    (original_result, query) = await gpt_agent.query_with_images(prompt=prompt, images=temp, response_format=StopReason)
+    (original_result, query) = await llm_agent.query_with_images(prompt=prompt, images=temp, response_format=StopReason)
     elapsed_time = time.time() - st
     description = parsed_value(original_result, "message")
     translated = parsed_value(original_result, "translated")
@@ -315,10 +330,10 @@ async def stop_reason(request: Request,
             "lang": lang,
         },
     )
-    log_json(directory=date, name="openai-query", data=query)
-    log_text(directory=date, name="openai-prompt", data=prompt)
+    log_json(directory=date, name=LLM_AGENT+"-query", data=query)
+    log_text(directory=date, name=LLM_AGENT+"-prompt", data=prompt)
     log_json(
-        directory=date, name="openai-response", data=json.loads(original_result.model_dump_json())
+        directory=date, name=LLM_AGENT+"-response", data=json.loads(original_result.model_dump_json())
     )
     log_image(directory=date, position="front", images=temp)
 

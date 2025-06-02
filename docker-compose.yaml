@@ -32,6 +32,10 @@ services:
       - image_desc_network
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LLM_AGENT=${LLM_AGENT}
+      - OLLAMA_HOST
+      - AGENT_VLM
+      - AGENT_LLM
       - "INITIAL_LOCATION=${INITIAL_LOCATION:-{\"lat\": 35.6241, \"lng\":139.7754}}"
       - API_KEY
       - USERNAMES
@@ -99,6 +103,10 @@ services:
     environment:
       - VERBOSE_OUTPUT=${VERBOSE_OUTPUT:-false}
       - EXTRA_ARGS
+      - LLM_AGENT=${LLM_AGENT}
+      - OLLAMA_HOST
+      - AGENT_VLM
+      - AGENT_LLM
     networks:
       - image_desc_network-test
     profiles:
@@ -139,6 +147,30 @@ services:
       - |
         flake8 /app --count --show-source --max-line-length=200 --statistics && \
         flake8 /test --count --show-source --max-line-length=200 --statistics
+
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    environment:
+      - OLLAMA_NUM_PARALLEL
+      - OLLAMA_MAX_LOADED_MODELS
+      - OLLAMA_FLASH_ATTENTION
+      - OLLAMA_KV_CACHE_TYPE
+    volumes:
+      - ./ollama:/root/.ollama
+    profiles:
+      - ollama
+    ports:
+      - "11434:11434"
+    restart: unless-stopped
+    deploy:
+       resources:
+         reservations:
+           devices:
+             - capabilities: [gpu]
+    networks:
+      - image_desc_network
+      - image_desc_network-test
 
 networks:
   image_desc_network:

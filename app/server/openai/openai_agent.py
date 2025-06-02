@@ -316,6 +316,27 @@ class GPTAgent:
     def update_past_descriptions(self, description, lat, lng):
         self.past_descriptions.append({"description": description, "location": {"lat": lat, "lng": lng}})
 
+    def construct_prompt_for_image_description(self,
+                                               sentence_length=3,
+                                               front="",
+                                               right="",
+                                               left="",
+                                               past_explanations="",
+                                               image_tags="",
+                                               lang="ja",
+                                               ):
+        return construct_prompt_for_image_description(sentence_length,
+                                                      front,
+                                                      right,
+                                                      left,
+                                                      past_explanations,
+                                                      image_tags,
+                                                      lang,
+                                                      )
+
+    def construct_prompt_for_stop_reason(self, lang):
+        return construct_prompt_for_stop_reason(lang)
+
     # Function to query with images
     async def query_with_images(self, prompt, images=[], max_tokens=3000, response_format=None):
         # Preparing the content with the prompt and images

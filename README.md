@@ -22,6 +22,12 @@ PASSWORDS=<pass1>[,<pass2>]...
 # if you want to use remote MONGODB or use different db name, change them from default
 MONGODB_HOST=mongodb://mongo:27017/
 MONGODB_NAME=geo_image_db
+
+# if you want to use ollama
+LLM_AGENT=  # ollama or ollama-2step
+OLLAMA_HOST=
+AGENT_VLM=
+AGENT_LLM=  # for ollama-2step
 ```
 
 ## Web UI
