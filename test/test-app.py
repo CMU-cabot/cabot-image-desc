@@ -197,6 +197,30 @@ def test_read_description_by_lat_lng_with_image_ja(api_key_headers, insert_dummy
     json_response = response.json()
     assert "description" in json_response
 
+# Test read_description_by_lat_lng_with_image endpoint using dummy image from test.json
+def test_read_description_by_lat_lng_with_3images_ja(api_key_headers, insert_dummy_data):
+    with open('/test/data/test.json') as f:
+        dummy = json.load(f)
+    # duplicate dummy images
+    image_payload = [
+        {"position": "front", "image_uri": dummy["image"]},
+        {"position": "left", "image_uri": dummy["image"]},
+        {"position": "right", "image_uri": dummy["image"]},
+    ]
+    params = {
+        "lat": 35.62414166666667,
+        "lng": 139.77542222222223,
+        "floor": 1,
+        "rotation": 0,
+        "max_count": 10,
+        "max_distance": 15,
+        "length_index": 0,
+        "distance_to_travel": 100,
+    }
+    response = client.post("/description_with_live_image", headers=api_key_headers, params=params, json=image_payload)
+    assert response.status_code == 200
+    json_response = response.json()
+    assert "description" in json_response
 
 # Test stop_reason endpoint using dummy image from test.json
 def test_stop_reason_with_image_ja(api_key_headers, insert_dummy_data):
