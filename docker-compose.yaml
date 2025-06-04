@@ -39,7 +39,7 @@ services:
       - MONGODB_HOST
       - MONGODB_NAME
       # agent
-      - LLM_AGENT=${LLM_AGENT}
+      - LLM_AGENT
       - AGENT_VLM
       - AGENT_LLM
       # ollama
@@ -110,7 +110,7 @@ services:
       - VERBOSE_OUTPUT=${VERBOSE_OUTPUT:-false}
       - EXTRA_ARGS
       # agent
-      - LLM_AGENT=${LLM_AGENT}
+      - LLM_AGENT
       - AGENT_VLM
       - AGENT_LLM
       # ollama
