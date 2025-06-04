@@ -23,13 +23,43 @@ import base64
 import cv2
 import json
 import os
+from typing import (
+    Any,
+    List,
+    Generic,
+    Optional,
+    TypedDict,
+    TypeVar,
+    Union,
+)
 from ollama import AsyncClient
 from pydantic import BaseModel
+from langchain_core.messages import BaseMessage
+from langchain.chat_models import init_chat_model
 
 
 USE_PAST_EXPLANATIONS = os.environ.get("USE_PAST_EXPLANATIONS", "false").lower() == "true"
+
+# langchain and ollama
+LLM_AGENT = os.environ.get("LLM_AGENT")
 AGENT_VLM = os.environ.get("AGENT_VLM", "")
 AGENT_LLM = os.environ.get("AGENT_LLM", "")
+# langchain
+MODEL_PROVIDER = os.environ.get("MODEL_PROVIDER")
+# langchain-ibm
+WATSONX_URL = os.environ.get("WATSONX_URL")
+WATSONX_API_KEY = os.environ.get("WATSONX_API_KEY")
+WATSONX_PROJECT_ID = os.environ.get("WATSONX_PROJECT_ID")
+
+
+ContentType = TypeVar("ContentType")
+
+
+# langchain structured output class converted from dict
+class StructuredOutputResponse(BaseModel, Generic[ContentType]):
+    raw: BaseMessage
+    parsed: Optional[ContentType]
+    parsing_error: Optional[str]
 
 
 class TranslatedDescription(BaseModel):
@@ -352,21 +382,9 @@ class DummyClient:
             })
 
 
-class OllamaAgent:
-    def __init__(self, model=AGENT_VLM):
-        self.llm_agent = os.environ.get("LLM_AGENT")
-        if self.llm_agent == "dummy_ollama":
-            self.client = DummyClient()
-        elif self.llm_agent == "ollama":
-            self.client = AsyncClient()
-        else:
-            raise ValueError("Please set valid LLM agent.")
-        self.model = model
-
-        if self.model == "":
-            raise ValueError("Please set AGENT_VLM")
-
-        self.past_descriptions = []
+class BaseAgent:
+    def __init__(self):
+        pass
 
     # Function to encode the image
     def encode_image(self, image):
@@ -421,6 +439,27 @@ class OllamaAgent:
 
     def construct_prompt_for_stop_reason(self, lang):
         return construct_prompt_for_stop_reason(lang)
+
+    # Function to query with images
+    async def query_with_images(self, prompt, images=[], max_tokens=3000, response_format=None):
+        pass
+
+
+class OllamaAgent(BaseAgent):
+    def __init__(self, model=AGENT_VLM):
+        self.llm_agent = LLM_AGENT
+        if self.llm_agent == "dummy_ollama":
+            self.client = DummyClient()
+        elif self.llm_agent == "ollama":
+            self.client = AsyncClient()
+        else:
+            raise ValueError("Please set valid LLM agent.")
+        self.model = model
+
+        if self.model == "":
+            raise ValueError("Please set AGENT_VLM")
+
+        self.past_descriptions = []
 
     # Function to query with images
     async def query_with_images(self, prompt, images=[], max_tokens=3000, response_format=None):
@@ -479,60 +518,112 @@ class OllamaAgent:
         return (response, query)
 
 
-class Ollama2StepAgent:
-    def __init__(self, model=AGENT_VLM, language_model=AGENT_LLM):
-        self.llm_agent = os.environ.get("LLM_AGENT")
-        if self.llm_agent == "dummy_ollama":
+class LangChainAgent(BaseAgent):
+    def __init__(self, model=AGENT_VLM):
+        self.llm_agent = LLM_AGENT
+        if self.llm_agent == "dummy_langchain":
             self.client = DummyClient()
-        elif self.llm_agent in ["ollama", "ollama-2step"]:
-            self.client = AsyncClient()
+        elif self.llm_agent == "langchain":
+            parameters = {
+                "temperature": 0.0,
+                "max_tokens": 3000,
+            }
+            self.client = init_chat_model(
+                model=model,
+                model_provider=MODEL_PROVIDER,
+                url=WATSONX_URL,
+                apikey=WATSONX_API_KEY,
+                project_id=WATSONX_PROJECT_ID,
+                params=parameters,
+            )
         else:
             raise ValueError("Please set valid LLM agent.")
         self.model = model
-        self.language_model = language_model
 
         if self.model == "":
-            raise ValueError("Please set AGENT_VLM.")
-        if self.language_model == "":
-            raise ValueError("Please set AGENT_LLM.")
+            raise ValueError("Please set AGENT_VLM")
 
         self.past_descriptions = []
 
-    # Function to encode the image
-    def encode_image(self, image):
-        if os.path.exists(image):
-            image = cv2.imread(image)
-            image = cv2.resize(image, (960, 540))
-        _, buffer = cv2.imencode('.jpg', image)
-        image_bytes = buffer.tobytes()
-        return base64.b64encode(image_bytes).decode('utf-8')
+    # Function to query with images
+    async def query_with_images(self, prompt, images=[], max_tokens=3000, response_format=None):
+        # Preparing the content with the prompt and images
+        messages = [
+            {
+                "role": "system",
+                "content": "あなたは視覚障害者が周囲の状況を理解するための説明アシスタントです。"
+            }
+        ]
 
-    def get_encoding(self, encoded_image):
-        prefix = "data:image/jpeg;base64,"
-        if encoded_image.startswith(prefix):
-            encoded_image = encoded_image[len(prefix):]
-        return f"{prefix}{encoded_image}"
+        content = []
+        for image in images:
+            if 'image_uri' in image:
+                image_uri = image['image_uri']
+                content.append({
+                            "type": "image_url",
+                            "image_url": {
+                                "url": image_uri,
+                            },
+                        })
+        content.append(
+            {
+                "type": "text",
+                "text": prompt
+            }
+        )
 
-    # Prepare image message content
-    def get_encoded_image_message(self, encoded_image):
-        encoding = self.get_encoding(encoded_image)
-        return {
-            "role": "user",
-            "content": [
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": encoding,
-                    }
-                }
-            ]
+        messages.append(
+            {
+                "role": "user",
+                "content": content
+            }
+            # HumanMessage(
+            #     content=content
+            # )
+        )
+
+        query = {
+            "model": self.model,
+            "messages": messages
         }
+        # Making the API call
+        try:
+            if response_format:
+                response = await self.client.with_structured_output(
+                                response_format,
+                                include_raw=True
+                            ).ainvoke(messages)
+                response = StructuredOutputResponse(
+                                raw=response["raw"],
+                                parsed=response["parsed"],
+                                parsing_error=str(response["parsing_error"]),
+                            )
+            else:
+                response = await self.client.ainvoke(messages)
+        except Exception as e:
+            response = DummyClient.DictToObject(
+                {
+                    "error": str(e),
+                    "choices": [
+                        {
+                            "message": {
+                                "parsed": {
+                                    "description": "dummy",
+                                    "message": "dummy",
+                                    "translated": "dummy",
+                                    "lang": "dummy",
+                                }
+                            }
+                        }
+                    ],
+                }
+            )
+        return (response, query)
 
-    def update_past_descriptions(self, description, lat, lng):
-        self.past_descriptions.append({"description": description, "location": {"lat": lat, "lng": lng}})
 
+class Base2StepAgent(BaseAgent):
     # data class
-    class Ollama2StepAgentPropmt(BaseModel):
+    class Prompt(BaseModel):
         single_image_description_prompt: str
         summarization_prompt_template: str
         summarization_prompt: str
@@ -585,7 +676,7 @@ class Ollama2StepAgent:
                     past_explanations=past_explanations
                 )
 
-        prompt_data = Ollama2StepAgent.Ollama2StepAgentPropmt(
+        prompt_data = Base2StepAgent.Prompt(
             single_image_description_prompt=single_image_description_prompt,
             summarization_prompt_template=summarization_prompt_template,
             summarization_prompt="",
@@ -604,7 +695,7 @@ class Ollama2StepAgent:
                 image_descriptions="{image_descriptions}",
                 )
 
-        prompt_data = Ollama2StepAgent.Ollama2StepAgentPropmt(
+        prompt_data = Base2StepAgent.Prompt(
             single_image_description_prompt=single_image_description_prompt,
             summarization_prompt_template=summarization_prompt_template,
             summarization_prompt="",
@@ -613,10 +704,30 @@ class Ollama2StepAgent:
 
         return prompt_data.model_dump()
 
+
+class Ollama2StepAgent(Base2StepAgent):
+    def __init__(self, model=AGENT_VLM, language_model=AGENT_LLM):
+        self.llm_agent = LLM_AGENT
+        if self.llm_agent == "dummy_ollama":
+            self.client = DummyClient()
+        elif self.llm_agent in ["ollama", "ollama-2step"]:
+            self.client = AsyncClient()
+        else:
+            raise ValueError("Please set valid LLM agent.")
+        self.model = model
+        self.language_model = language_model
+
+        if self.model == "":
+            raise ValueError("Please set AGENT_VLM.")
+        if self.language_model == "":
+            raise ValueError("Please set AGENT_LLM.")
+
+        self.past_descriptions = []
+
     # Function to query with images
     async def query_with_images(self, prompt, images=[], max_tokens=3000, response_format=None):
-
-        prompt_instance = Ollama2StepAgent.Ollama2StepAgentPropmt(**prompt)
+        # convert from dict
+        prompt_instance = Base2StepAgent.Prompt(**prompt)
 
         # image description
         messages = [
@@ -726,6 +837,177 @@ class Ollama2StepAgent:
                 response = await self.client.chat(**query2)
             else:
                 response = await self.client.chat(**query)
+        except Exception as e:
+            response = DummyClient.DictToObject(
+                {
+                    "error": str(e),
+                    "choices": [
+                        {
+                            "message": {
+                                "parsed": {
+                                    "description": "dummy",
+                                    "message": "dummy",
+                                    "translated": "dummy",
+                                    "lang": "dummy",
+                                }
+                            }
+                        }
+                    ],
+                }
+            )
+        return (response, query)
+
+
+class LangChain2StepAgent(Base2StepAgent):
+    def __init__(self, model=AGENT_VLM, language_model=AGENT_LLM):
+        self.llm_agent = LLM_AGENT
+        if self.llm_agent == "langchain-2step":
+            pass
+        else:
+            raise ValueError("Please set valid LLM agent.")
+        self.model = model
+        self.language_model = language_model
+
+        if self.model == "":
+            raise ValueError("Please set AGENT_VLM.")
+        if self.language_model == "":
+            raise ValueError("Please set AGENT_LLM.")
+
+        parameters = {
+                "temperature": 0.0,
+                "max_tokens": 3000,
+            }
+
+        self.vlm_client = init_chat_model(
+                model_provider=MODEL_PROVIDER,
+                model=self.model,
+                url=WATSONX_URL,
+                apikey=WATSONX_API_KEY,
+                project_id=WATSONX_PROJECT_ID,
+                params=parameters,
+            )
+
+        self.llm_client = init_chat_model(
+                model_provider=MODEL_PROVIDER,
+                model=self.language_model,
+                url=WATSONX_URL,
+                apikey=WATSONX_API_KEY,
+                project_id=WATSONX_PROJECT_ID,
+                params=parameters,
+            )
+
+        self.past_descriptions = []
+
+    # Function to query with images
+    async def query_with_images(self, prompt, images=[], max_tokens=3000, response_format=None):
+        # convert from dict
+        prompt_instance = Base2StepAgent.Prompt(**prompt)
+
+        # create tasks
+        queries = []
+        desc_tasks = []
+        for image in images:
+            if 'image_uri' in image:
+                image_uri = image['image_uri']
+                messages = [
+                    {
+                        "role": "system",
+                        "content": "あなたは視覚障害者が周囲の状況を理解するための説明アシスタントです。"
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": image_uri,
+                                }
+                            },
+                            {
+                                "type": "text",
+                                "text": prompt_instance.single_image_description_prompt,
+                            }
+                        ]
+                    }
+                ]
+                query = {
+                    "model": self.model,
+                    "messages": messages,
+                }
+                queries.append(query)
+                desc_tasks.append(self.vlm_client.ainvoke(messages))
+
+        # API call
+        desc_responses = []
+        try:
+            if len(desc_tasks) > 0:
+                desc_responses = await asyncio.gather(*desc_tasks)
+        except Exception as e:
+            response = DummyClient.DictToObject(
+                {
+                    "error": str(e),
+                    "choices": [
+                        {
+                            "message": {
+                                "parsed": {
+                                    "description": "dummy",
+                                    "message": "dummy",
+                                    "translated": "dummy",
+                                    "lang": "dummy",
+                                }
+                            }
+                        }
+                    ],
+                }
+            )
+
+        # summarization
+        image_tags_splitted = prompt_instance.image_tags.split("\n")
+
+        # prompt_concat = prompt.summarization_prompt1
+        image_descriptions_str = ""
+        for idx, desc_resp in enumerate(desc_responses):
+            response_content = desc_resp.content.strip()  # AIMessage.content
+            image_tag = image_tags_splitted[idx]
+            image_descriptions_str += image_tag + ": " + response_content + "\n"
+
+        prompt_concat = prompt_instance.summarization_prompt_template.format(
+            image_descriptions=image_descriptions_str
+            )
+
+        # update reformatted prompt
+        prompt["summarization_prompt"] = prompt_concat
+
+        messages = [
+            {
+                "role": "system",
+                "content": "あなたは視覚障害者が周囲の状況を理解するための説明アシスタントです。"
+            },
+            {
+                "role": "user",
+                "content": prompt_concat,
+            }
+        ]
+
+        query = {
+            "model": self.language_model,
+            "messages": messages,
+        }
+
+        # Making the API call
+        try:
+            if response_format:
+                response = await self.llm_client.with_structured_output(
+                                response_format,
+                                include_raw=True
+                            ).ainvoke(messages)
+                response = StructuredOutputResponse(
+                                raw=response["raw"],
+                                parsed=response["parsed"],
+                                parsing_error=str(response["parsing_error"]),
+                            )
+            else:
+                response = await self.llm_client.ainvoke(messages)
         except Exception as e:
             response = DummyClient.DictToObject(
                 {

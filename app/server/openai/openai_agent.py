@@ -338,7 +338,7 @@ class GPTAgent:
         return construct_prompt_for_stop_reason(lang)
 
     # Function to query with images
-    async def query_with_images(self, prompt, images=[], max_tokens=3000, response_format=None):
+    async def query_with_images(self, prompt, images=[], max_tokens=3000, response_format=None):  # -> ParsedChatCompletion[response_format]
         # Preparing the content with the prompt and images
         messages = [
             {

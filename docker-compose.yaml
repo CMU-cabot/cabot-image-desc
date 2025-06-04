@@ -32,16 +32,23 @@ services:
       - image_desc_network
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - LLM_AGENT=${LLM_AGENT}
-      - OLLAMA_HOST
-      - AGENT_VLM
-      - AGENT_LLM
       - "INITIAL_LOCATION=${INITIAL_LOCATION:-{\"lat\": 35.6241, \"lng\":139.7754}}"
       - API_KEY
       - USERNAMES
       - PASSWORDS
       - MONGODB_HOST
       - MONGODB_NAME
+      # agent
+      - LLM_AGENT=${LLM_AGENT}
+      - AGENT_VLM
+      - AGENT_LLM
+      # ollama
+      - OLLAMA_HOST
+      # langchain
+      - MODEL_PROVIDER
+      - WATSONX_URL
+      - WATSONX_API_KEY
+      - WATSONX_PROJECT_ID
     profiles:
       - build
 
@@ -103,10 +110,17 @@ services:
     environment:
       - VERBOSE_OUTPUT=${VERBOSE_OUTPUT:-false}
       - EXTRA_ARGS
+      # agent
       - LLM_AGENT=${LLM_AGENT}
-      - OLLAMA_HOST
       - AGENT_VLM
       - AGENT_LLM
+      # ollama
+      - OLLAMA_HOST
+      # langchain
+      - MODEL_PROVIDER
+      - WATSONX_URL
+      - WATSONX_API_KEY
+      - WATSONX_PROJECT_ID
     networks:
       - image_desc_network-test
     profiles:

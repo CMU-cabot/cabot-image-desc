@@ -32,9 +32,18 @@ from typing import Optional
 from ..openai.openai_agent import GPTAgent
 from ..openai.openai_agent import TranslatedDescription
 from ..openai.openai_agent import StopReason
-from ..agent.ollama_agent import OllamaAgent, Ollama2StepAgent
 from .auth import verify_api_key_or_cookie
 from ..db import get_description_by_lat_lng
+
+# Import for agent
+from ollama._types import ChatResponse
+from ..agent.llm_agent import (
+    StructuredOutputResponse,
+    OllamaAgent,
+    Ollama2StepAgent,
+    LangChainAgent,
+    LangChain2StepAgent,
+)
 
 router = APIRouter()
 
@@ -46,6 +55,10 @@ elif LLM_AGENT == "ollama":
     llm_agent = OllamaAgent()
 elif LLM_AGENT == "ollama-2step":
     llm_agent = Ollama2StepAgent()
+elif LLM_AGENT == "langchain":
+    llm_agent = LangChainAgent()
+elif LLM_AGENT == "langchain-2step":
+    llm_agent = LangChain2StepAgent()
 else:
     raise ValueError("Please specify valid LLM_AGENT")
 
@@ -136,10 +149,21 @@ def preprocess_descriptions(locations, rotation, lat, lng, max_distance):
 def parsed_value(result, key):
     try:
         try:
+            # ParsedChatCompletion
             return getattr(result.choices[0].message.parsed, key)
         except Exception as e:
-            import json
-            return json.loads(result.message.content)[key]
+            if isinstance(result, ChatResponse):
+                # ollama
+                import json
+                return json.loads(result.message.content)[key]
+            elif isinstance(result, TranslatedDescription) \
+                    or isinstance(result, StopReason):
+                # langchain structured outputs
+                return getattr(result, key)
+            elif isinstance(result, StructuredOutputResponse):
+                # langchain structured outputs (include_raw=True)
+                return getattr(result.parsed, key)
+            raise e
     except Exception as e:
         if not hasattr(result, "error"):
             setattr(result, "error", str(e))
