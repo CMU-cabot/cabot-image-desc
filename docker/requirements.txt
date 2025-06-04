@@ -18,6 +18,7 @@ Jinja2==3.1.6
 jiter==0.8.2
 langchain==0.3.25
 langchain-ibm==0.3.11
+langchain-ollama==0.3.3
 numpy==2.0.2
 ollama==0.5.1
 openai==1.65.3
