@@ -44,8 +44,6 @@ USE_PAST_EXPLANATIONS = os.environ.get("USE_PAST_EXPLANATIONS", "false").lower()
 LLM_AGENT = os.environ.get("LLM_AGENT")
 AGENT_VLM = os.environ.get("AGENT_VLM", "")
 AGENT_LLM = os.environ.get("AGENT_LLM", "")
-# langchain
-MODEL_PROVIDER = os.environ.get("MODEL_PROVIDER")
 # langchain-ibm
 WATSONX_URL = os.environ.get("WATSONX_URL")
 WATSONX_API_KEY = os.environ.get("WATSONX_API_KEY")
@@ -530,7 +528,6 @@ class LangChainAgent(BaseAgent):
             }
             self.client = init_chat_model(
                 model=model,
-                model_provider=MODEL_PROVIDER,
                 url=WATSONX_URL,
                 apikey=WATSONX_API_KEY,
                 project_id=WATSONX_PROJECT_ID,
@@ -879,7 +876,6 @@ class LangChain2StepAgent(Base2StepAgent):
             }
 
         self.vlm_client = init_chat_model(
-                model_provider=MODEL_PROVIDER,
                 model=self.model,
                 url=WATSONX_URL,
                 apikey=WATSONX_API_KEY,
@@ -888,7 +884,6 @@ class LangChain2StepAgent(Base2StepAgent):
             )
 
         self.llm_client = init_chat_model(
-                model_provider=MODEL_PROVIDER,
                 model=self.language_model,
                 url=WATSONX_URL,
                 apikey=WATSONX_API_KEY,

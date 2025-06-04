@@ -45,7 +45,6 @@ services:
       # ollama
       - OLLAMA_HOST
       # langchain
-      - MODEL_PROVIDER
       - WATSONX_URL
       - WATSONX_API_KEY
       - WATSONX_PROJECT_ID
@@ -117,7 +116,6 @@ services:
       # ollama
       - OLLAMA_HOST
       # langchain
-      - MODEL_PROVIDER
       - WATSONX_URL
       - WATSONX_API_KEY
       - WATSONX_PROJECT_ID
