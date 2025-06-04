@@ -23,11 +23,14 @@ PASSWORDS=<pass1>[,<pass2>]...
 MONGODB_HOST=mongodb://mongo:27017/
 MONGODB_NAME=geo_image_db
 
-# if you want to use ollama
-LLM_AGENT=  # ollama or ollama-2step
-OLLAMA_HOST=
+# if you want to use langchain or ollama
+LLM_AGENT=  # langchain, langchain-2step, ollama or ollama-2step
 AGENT_VLM=
-AGENT_LLM=  # for ollama-2step
+AGENT_LLM=  # for 2step agents
+# langchain
+MODEL_PROVIDER=
+# ollama
+OLLAMA_HOST=
 ```
 
 ## Web UI
