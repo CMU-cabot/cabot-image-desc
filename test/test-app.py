@@ -197,6 +197,7 @@ def test_read_description_by_lat_lng_with_image_ja(api_key_headers, insert_dummy
     json_response = response.json()
     assert "description" in json_response
 
+
 # Test read_description_by_lat_lng_with_image endpoint using dummy image from test.json
 def test_read_description_by_lat_lng_with_3images_ja(api_key_headers, insert_dummy_data):
     with open('/test/data/test.json') as f:
@@ -221,6 +222,7 @@ def test_read_description_by_lat_lng_with_3images_ja(api_key_headers, insert_dum
     assert response.status_code == 200
     json_response = response.json()
     assert "description" in json_response
+
 
 # Test stop_reason endpoint using dummy image from test.json
 def test_stop_reason_with_image_ja(api_key_headers, insert_dummy_data):

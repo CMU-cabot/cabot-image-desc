@@ -187,12 +187,12 @@ async def read_description_by_lat_lng(lat: float = Query(...),
     location_per_directions, past_explanations = preprocess_descriptions(locations, rotation, lat, lng, max_distance)
 
     prompt = llm_agent.construct_prompt_for_image_description(sentence_length=sentence_length,
-                                                    front=location_per_directions["front"]["description"],
-                                                    right=location_per_directions["right"]["description"],
-                                                    left=location_per_directions["left"]["description"],
-                                                    past_explanations=past_explanations,
-                                                    lang=lang,
-                                                    )
+                                                              front=location_per_directions["front"]["description"],
+                                                              right=location_per_directions["right"]["description"],
+                                                              left=location_per_directions["left"]["description"],
+                                                              past_explanations=past_explanations,
+                                                              lang=lang,
+                                                              )
 
     st = time.time()
     (original_result, query) = await llm_agent.query_with_images(prompt=prompt, response_format=TranslatedDescription)
@@ -264,13 +264,13 @@ async def read_description_by_lat_lng_with_image(request: Request,
         count += 1
 
     prompt = llm_agent.construct_prompt_for_image_description(sentence_length=sentence_length,
-                                                    front=location_per_directions["front"]["description"],
-                                                    right=location_per_directions["right"]["description"],
-                                                    left=location_per_directions["left"]["description"],
-                                                    past_explanations=past_explanations,
-                                                    image_tags=tags,
-                                                    lang=lang,
-                                                    )
+                                                              front=location_per_directions["front"]["description"],
+                                                              right=location_per_directions["right"]["description"],
+                                                              left=location_per_directions["left"]["description"],
+                                                              past_explanations=past_explanations,
+                                                              image_tags=tags,
+                                                              lang=lang,
+                                                              )
 
     st = time.time()
     (original_result, query) = await llm_agent.query_with_images(prompt=prompt, images=images, response_format=TranslatedDescription)
