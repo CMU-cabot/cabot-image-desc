@@ -39,6 +39,7 @@ from ..db import get_description_by_lat_lng
 from ollama._types import ChatResponse
 from ..agent.llm_agent import (
     StructuredOutputResponse,
+    LangChainAgentResponse,
     OllamaAgent,
     Ollama2StepAgent,
     LangChainAgent,
@@ -163,6 +164,8 @@ def parsed_value(result, key):
             elif isinstance(result, StructuredOutputResponse):
                 # langchain structured outputs (include_raw=True)
                 return getattr(result.parsed, key)
+            elif isinstance(result, LangChainAgentResponse):
+                return getattr(result.response.parsed, key)
             raise e
     except Exception as e:
         if not hasattr(result, "error"):

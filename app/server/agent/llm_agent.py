@@ -25,6 +25,7 @@ import json
 import os
 from typing import (
     Generic,
+    List,
     Optional,
     TypeVar,
 )
@@ -69,6 +70,11 @@ class StructuredOutputResponse(BaseModel, Generic[ContentType]):
     raw: BaseMessage
     parsed: Optional[ContentType]
     parsing_error: Optional[str]
+
+
+class LangChainAgentResponse(BaseModel, Generic[ContentType]):
+    intermediate_responses: Optional[List[BaseMessage]]
+    response: StructuredOutputResponse[ContentType]
 
 
 class TranslatedDescription(BaseModel):
@@ -744,7 +750,7 @@ class LangChain2StepAgent(Base2StepAgent):
         prompt_instance = Base2StepAgent.Prompt(**prompt)
 
         # create tasks
-        queries = []
+        desc_queries = []
         desc_tasks = []
         for image in images:
             if 'image_uri' in image:
@@ -770,11 +776,11 @@ class LangChain2StepAgent(Base2StepAgent):
                         ]
                     }
                 ]
-                query = {
+                desc_query = {
                     "model": self.model,
                     "messages": messages,
                 }
-                queries.append(query)
+                desc_queries.append(desc_query)
                 desc_tasks.append(self.vlm_client.ainvoke(messages))
 
         # API call
@@ -829,9 +835,14 @@ class LangChain2StepAgent(Base2StepAgent):
             }
         ]
 
-        query = {
+        summarization_query = {
             "model": self.language_model,
             "messages": messages,
+        }
+
+        query = {
+            "image_description": desc_queries,
+            "summarization": summarization_query,
         }
 
         # Making the API call
@@ -846,6 +857,10 @@ class LangChain2StepAgent(Base2StepAgent):
                                 parsed=response["parsed"],
                                 parsing_error=str(response["parsing_error"]),
                             )
+                response = LangChainAgentResponse(
+                    intermediate_responses=desc_responses,
+                    response=response,
+                )
             else:
                 response = await self.llm_client.ainvoke(messages)
         except Exception as e:
