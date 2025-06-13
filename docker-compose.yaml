@@ -48,6 +48,8 @@ services:
       - WATSONX_URL
       - WATSONX_API_KEY
       - WATSONX_PROJECT_ID
+      # debug
+      - DEBUG
     profiles:
       - build
 

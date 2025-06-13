@@ -33,6 +33,8 @@ from ollama import AsyncClient
 from pydantic import BaseModel
 from langchain_core.messages import BaseMessage
 from langchain.chat_models import init_chat_model
+# debug
+from langchain.globals import set_debug
 
 from .llm_agent_template import (
     SYSTEM_MESSAGE,
@@ -61,6 +63,8 @@ WATSONX_URL = os.environ.get("WATSONX_URL")
 WATSONX_API_KEY = os.environ.get("WATSONX_API_KEY")
 WATSONX_PROJECT_ID = os.environ.get("WATSONX_PROJECT_ID")
 
+DEBUG_FLAG = os.environ.get("DEBUG", "false").lower() == "true"
+set_debug(DEBUG_FLAG)
 
 ContentType = TypeVar("ContentType")
 
