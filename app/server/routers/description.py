@@ -171,12 +171,13 @@ async def read_description_by_lat_lng(lat: float = Query(...),
     log_json(directory=date, name="params", data={
         "lat": lat,
         "lng": lng,
+        "floor": floor,
         "rotation": rotation,
         "max_count": max_count,
         "max_distance": max_distance,
+        "lang": lang,
         "sentence_length": sentence_length,
         "prompt": prompt,
-        "lang": lang,
     })
     log_json(directory=date, name="openai-query", data=query)
     log_json(directory=date, name="openai-prompt", data=prompt)
