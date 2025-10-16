@@ -29,14 +29,10 @@ body {
     overflow-y: scroll;
     width: calc(100vw - 20px);
 }
-form {
-    display: inline;
-}
-
 textarea {
     width: 1000px;
     max-width: 1000px;
-    height: 5em;
+    height: 2em;
 }
 
 .csv-list {
@@ -67,10 +63,79 @@ div.location {
     line-height: 2em;
 }
 
-#query, #query input {
-    padding: 10px;
-    margin: 10px;
-    text-align: center;
+#query {
+    padding: 16px;
+}
+
+#query form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+#query form .field-columns {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 24px;
+    width: 100%;
+}
+
+#query form .field-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    flex: 1 1 280px;
+    min-width: 240px;
+    max-width: 320px;
+}
+
+#query form p {
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+#query form details {
+    padding: 12px;
+    border: 1px solid #d0d0d0;
+    border-radius: 4px;
+    width: 100%;
+}
+
+#query form details summary {
+    cursor: pointer;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+#query label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+#query label.checkbox-label {
+    gap: 4px;
+}
+
+#query input[type="text"],
+#query select {
+    margin: 0;
+    padding: 4px 6px;
+}
+
+#query input[type="file"] {
+    padding: 0;
+}
+
+#query .form-actions {
+    justify-content: flex-start;
+    gap: 12px;
 }
 
 #result {
@@ -82,14 +147,6 @@ div.location {
     padding: 10px;
     margin: 10px;
     text-align: center;
-    border: 1px solid gray;
-}
-
-form div {
-    display: inline-block;
-    vertical-align: middle;
-    text-align: right;
-    padding: 10px;
     border: 1px solid gray;
 }
 
