@@ -13,55 +13,80 @@
     </script>
 </head>
 <body>
-    <div id="query">
-    <form id="imageForm" enctype="multipart/form-data">
-        <input type="file" id="imageInput" accept="image/*"><br/>
-        <div>
-            <select id="languageSelect" name="language">
-                <option value="ja">Japanese</option>
-                <option value="en">English</option>
-                <option value="zh">Chinese</option>
-                <option value="ko">Korean</option>
-            </select>
-            <label for="floorInput">Floor:</label>
-            <input type="text" id="floorInput" name="floor" value="1" size="3" />
-        </div>
-        <div>
-            <label for="maxDistanceInput">Max Dist (Surround):</label>
-            <input type="text" id="maxDistanceInput" name="maxDistance" value="15" size="3" />
-            <label for="maxDistanceStopInput">Max Dist (Stop):</label>
-            <input type="text" id="maxDistanceStopInput" name="maxDistanceStop" value="100" size="3" />
-        </div>
-        <div>
-            <label for="maxCountInput">Max Count:</label>
-            <input type="text" id="maxCountInput" name="maxCount" value="10" size="3" />
-            <label for="rotationInput">Rotation:</label>
-            <input type="text" id="rotationInput" name="rotation" value="0" size="3" />
-        </div>
-        <div>
-            <label for="lengthIndexInput">Length Index:</label>
-            <input type="text" id="lengthIndexInput" name="lengthIndex" value="0" size="3" />
-            <label for="distanceToTravelInput">Dist to Travel:</label>
-            <input type="text" id="distanceToTravelInput" name="distanceToTravel" value="100" size="3" />
-        </div>
-        <div>
-            Sentence Length:
-            <select id="sentenceLengthSelect" name="sentenceLength">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3" selected>3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-            </select>
-            <label for="useLiveImageOnlyCheck">Use only live image</label>
-            <input type="checkbox" id="useLiveImageOnlyCheck" name="useLiveImageOnly" />
-        </div>
-        <div>
-            <button type="button" onclick="surround()">Surround</button>
-            <button type="button" onclick="stopReason()">Stop Reason</button>
-        </div>
-    </form>
-    </div>
+    <main id="query">
+        <form id="imageForm" enctype="multipart/form-data">
+            <div class="field-columns">
+                <div class="field-stack">
+                    <p>
+                        <label for="imageInput">Image:</label>
+                        <input type="file" id="imageInput" accept="image/*" />
+                    </p>
+                    <p>
+                        <label for="languageSelect">Language:</label>
+                        <select id="languageSelect" name="language">
+                            <option value="ja">Japanese</option>
+                            <option value="en">English</option>
+                            <option value="zh">Chinese</option>
+                            <option value="ko">Korean</option>
+                        </select>
+                    </p>
+                    <p>
+                        <label for="floorInput">Floor:</label>
+                        <input type="text" id="floorInput" name="floor" value="1" size="3" />
+                    </p>
+                </div>
+                <div class="field-stack">
+                    <details id="optionalParameters">
+                        <summary>Optional Parameters</summary>
+                        <p>
+                            <label for="maxDistanceInput">Max Dist (Surround):</label>
+                            <input type="text" id="maxDistanceInput" name="maxDistance" value="15" size="3" />
+                        </p>
+                        <p>
+                            <label for="maxDistanceStopInput">Max Dist (Stop):</label>
+                            <input type="text" id="maxDistanceStopInput" name="maxDistanceStop" value="100" size="3" />
+                        </p>
+                        <p>
+                            <label for="maxCountInput">Max Count:</label>
+                            <input type="text" id="maxCountInput" name="maxCount" value="10" size="3" />
+                        </p>
+                        <p>
+                            <label for="rotationInput">Rotation:</label>
+                            <input type="text" id="rotationInput" name="rotation" value="0" size="3" />
+                        </p>
+                        <p>
+                            <label for="lengthIndexInput">Length Index:</label>
+                            <input type="text" id="lengthIndexInput" name="lengthIndex" value="0" size="3" />
+                        </p>
+                        <p>
+                            <label for="distanceToTravelInput">Dist to Travel:</label>
+                            <input type="text" id="distanceToTravelInput" name="distanceToTravel" value="100" size="3" />
+                        </p>
+                        <p>
+                            <label for="sentenceLengthSelect">Sentence Length:</label>
+                            <select id="sentenceLengthSelect" name="sentenceLength">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3" selected>3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                            </select>
+                        </p>
+                    </details>
+                    <p>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="useLiveImageOnlyCheck" name="useLiveImageOnly" />
+                            Use only live image
+                        </label>
+                    </p>
+                    <p class="form-actions">
+                        <button type="button" onclick="surround()">Surround</button>
+                        <button type="button" onclick="stopReason()">Stop Reason</button>
+                    </p>
+                </div>
+            </div>
+        </form>
+    </main>
     <pre id="result"></pre>
     <div id="navigation">
         <a href="./index.html">Image Map</a><br />
