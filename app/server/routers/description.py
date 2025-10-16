@@ -293,6 +293,7 @@ async def read_description_by_lat_lng_with_image(request: Request,
     log_json(directory=date, name="params", data={
         "lat": lat,
         "lng": lng,
+        "floor": floor,
         "rotation": rotation,
         "max_count": max_count,
         "max_distance": max_distance,
