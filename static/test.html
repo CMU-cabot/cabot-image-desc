@@ -16,7 +16,6 @@
     <div id="query">
     <form id="imageForm" enctype="multipart/form-data">
         <input type="file" id="imageInput" accept="image/*"><br/>
-        <!-- New language select field -->
         <div>
             <select id="languageSelect" name="language">
                 <option value="ja">Japanese</option>
@@ -24,36 +23,29 @@
                 <option value="zh">Chinese</option>
                 <option value="ko">Korean</option>
             </select>
-        </div>
-        <div>
             <label for="floorInput">Floor:</label>
-            <input type="text" id="floorInput" name="floor" value="1" />
+            <input type="text" id="floorInput" name="floor" value="1" size="3" />
         </div>
         <div>
-            <label for="maxDistanceInput">Max Distance (Surround):</label>
-            <input type="text" id="maxDistanceInput" name="maxDistance" value="15" />
-        </div>
-        <div>
-            <label for="maxDistanceStopInput">Max Distance (Stop Reason):</label>
-            <input type="text" id="maxDistanceStopInput" name="maxDistanceStop" value="100" />
+            <label for="maxDistanceInput">Max Dist (Surround):</label>
+            <input type="text" id="maxDistanceInput" name="maxDistance" value="15" size="3" />
+            <label for="maxDistanceStopInput">Max Dist (Stop):</label>
+            <input type="text" id="maxDistanceStopInput" name="maxDistanceStop" value="100" size="3" />
         </div>
         <div>
             <label for="maxCountInput">Max Count:</label>
-            <input type="text" id="maxCountInput" name="maxCount" value="10" />
-        </div>
-        <div>
+            <input type="text" id="maxCountInput" name="maxCount" value="10" size="3" />
             <label for="rotationInput">Rotation:</label>
-            <input type="text" id="rotationInput" name="rotation" value="0" />
+            <input type="text" id="rotationInput" name="rotation" value="0" size="3" />
         </div>
         <div>
             <label for="lengthIndexInput">Length Index:</label>
-            <input type="text" id="lengthIndexInput" name="lengthIndex" value="0" />
+            <input type="text" id="lengthIndexInput" name="lengthIndex" value="0" size="3" />
+            <label for="distanceToTravelInput">Dist to Travel:</label>
+            <input type="text" id="distanceToTravelInput" name="distanceToTravel" value="100" size="3" />
         </div>
         <div>
-            <label for="distanceToTravelInput">Distance to Travel:</label>
-            <input type="text" id="distanceToTravelInput" name="distanceToTravel" value="100" />
-        </div>
-        <div>
+            Sentence Length:
             <select id="sentenceLengthSelect" name="sentenceLength">
                 <option value="1">1</option>
                 <option value="2">2</option>
@@ -63,8 +55,9 @@
             </select>
             <label for="useLiveImageOnlyCheck">Use only live image</label>
             <input type="checkbox" id="useLiveImageOnlyCheck" name="useLiveImageOnly" />
+        </div>
+        <div>
             <button type="button" onclick="surround()">Surround</button>
-            <br>
             <button type="button" onclick="stopReason()">Stop Reason</button>
         </div>
     </form>
