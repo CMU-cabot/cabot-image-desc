@@ -39,6 +39,14 @@ function prepareRequestData(maxDistance, sentenceLength, useLiveImageOnly) {
     const lang = languageSelect ? languageSelect.value : "";
     const floorInput = document.getElementById("floorInput");
     const floor = floorInput ? parseInt(floorInput.value) || 1 : 1;
+    const maxCountInput = document.getElementById("maxCountInput");
+    const maxCount = maxCountInput ? maxCountInput.value : "10";
+    const rotationInput = document.getElementById("rotationInput");
+    const rotation = rotationInput ? rotationInput.value : "0";
+    const lengthIndexInput = document.getElementById("lengthIndexInput");
+    const lengthIndex = lengthIndexInput ? lengthIndexInput.value : "0";
+    const distanceToTravelInput = document.getElementById("distanceToTravelInput");
+    const distanceToTravel = distanceToTravelInput ? distanceToTravelInput.value : "100";
 
     const payload = [{
         position: "front",
@@ -48,11 +56,11 @@ function prepareRequestData(maxDistance, sentenceLength, useLiveImageOnly) {
         lat: coords.lat,
         lng: coords.lng,
         floor: floor,
-        rotation: "0",
-        max_count: "10",
+        rotation: rotation,
+        max_count: maxCount,
         max_distance: maxDistance,
-        length_index: "0",
-        distance_to_travel: "100",
+        length_index: lengthIndex,
+        distance_to_travel: distanceToTravel,
         lang: lang,
         sentence_length: sentenceLength,
         use_live_image_only: useLiveImageOnly,
@@ -84,7 +92,9 @@ function surround() {
     // Use common request data
     const sentenceLength = document.getElementById("sentenceLengthSelect").value;
     const useLiveImageOnly = document.getElementById("useLiveImageOnlyCheck").checked;
-    const reqData = prepareRequestData("15", sentenceLength, useLiveImageOnly);
+    const maxDistanceInput = document.getElementById("maxDistanceInput");
+    const maxDistance = maxDistanceInput ? maxDistanceInput.value : "15";
+    const reqData = prepareRequestData(maxDistance, sentenceLength, useLiveImageOnly);
     if (!reqData) return;
     const { payload, params } = reqData;
 
@@ -93,7 +103,9 @@ function surround() {
 
 function stopReason() {
     // Use common request data
-    const reqData = prepareRequestData("100");
+    const maxDistanceStopInput = document.getElementById("maxDistanceStopInput");
+    const maxDistance = maxDistanceStopInput ? maxDistanceStopInput.value : "100";
+    const reqData = prepareRequestData(maxDistance);
     if (!reqData) return;
     const { payload, params } = reqData;
 
