@@ -37,6 +37,8 @@ function prepareRequestData(maxDistance, sentenceLength, useLiveImageOnly) {
     const coords = window.lastImageCoordinates || { lat: 0, lng: 0 };
     const languageSelect = document.getElementById("languageSelect");
     const lang = languageSelect ? languageSelect.value : "";
+    const floorInput = document.getElementById("floorInput");
+    const floor = floorInput ? parseInt(floorInput.value) || 1 : 1;
 
     const payload = [{
         position: "front",
@@ -45,7 +47,7 @@ function prepareRequestData(maxDistance, sentenceLength, useLiveImageOnly) {
     const params = new URLSearchParams({
         lat: coords.lat,
         lng: coords.lng,
-        floor: "1",
+        floor: floor,
         rotation: "0",
         max_count: "10",
         max_distance: maxDistance,
