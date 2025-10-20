@@ -34,6 +34,7 @@ MONGODB_NAME=geo_image_db
 - `./images` is mounted into docker container (docker-container-upload.yaml)
 - Put all images into `./images` dir
 - Put the exported json file into `./images` dir
+- For important notes on taking and uploading images, see [this page (Japanese only)](https://github.com/CMU-cabot/cabot-image-desc/blob/main/doc/how_to_use.md).
 
 ## build docker image
 
