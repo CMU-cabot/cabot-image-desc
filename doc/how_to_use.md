@@ -1,0 +1,41 @@
+## 画像撮影時の注意点
+#### 屋外の時
+- iPhoneのカメラ機能で撮影すればOK
+  - 後述のようにロボットを起動してアテンドスマホで撮影してももちろん良い
+- カメラのフォーマットを互換性優先にする（デフォルトは高効率になっている）
+  - 設定>カメラ>フォーマット>カメラ撮影(互換性優先)
+- カメラアプリに位置情報の使用が許可されていることと正確な位置情報がオンになっていることを確認する
+  - 設定>プライバシーとセキュリティ>位置情報サービス>カメラ
+  - 正しく設定されていた場合、添付画像のように写真のiボタンを押したら地図上に撮った写真がマッピングされる
+<img width=40% height="2532" alt="Image" src="https://github.com/user-attachments/assets/0b5a63b6-c794-47d9-8cee-85ff5b312603" />
+
+#### 屋内の場合
+- GPSがうまくいかないのでロボットを起動してLocalizationができている状態でアテンドアプリの`スナップショット`機能を使って撮影する
+- ロボットに下記の画像のようにアテンドスマホを取り付けて撮影する
+  - 特に向きは要注意
+  - これを間違えるとimage-desc-serverにアップロードする際に向きがおかしなことになる
+<img width=40% height="1964" alt="Image" src="https://github.com/user-attachments/assets/c20330d4-f6a3-4523-ba8b-e68ba7039dd4"/>
+<img width=40% height="1968" alt="Image" src="https://github.com/user-attachments/assets/7f2bc4e8-2fd5-412f-b80e-4e170c825369"/>
+
+
+## 画像共有時の注意点
+- slackなどで画像を送ると，位置情報が記録されtexifデータが消えてしまうことがある
+- Airdropやboxを使ってPCへ送れば大丈夫
+
+
+## 画像のアップロード
+- リモートのimage-desc-serverから最新のimages.jsonを取ってくる
+  - image.jsonのバージョン管理はcabot_site_xxxでやっているが，リモートサーバ側で編集されたものが反映されていない場合もあるので（本来はリモートサーバ側で編集があったら即githubへpushするのが望ましい）
+    - server_data/image-desc/images.json
+- ローカルのサーバにimages.jsonをインポート
+- 下記のスクリプトを実行
+例）
+```
+./manage-images.sh -I images/3階/ -F 3 -t poi
+```
+  - `-I`: ディレクトリにある画像をまとめて処理
+    - `-i`: 画像を個別指定（アップロードのテストの時などに使用）
+  - `-F`: フロアの階数を指定（地上波1）
+  - `-t poi`: タグとして`poi`を設定
+    - image-desc-serverは`poi` タグがついたものだけを拾ってくる
+    - 逆に特定の画像を拾ってきて欲しくない場合はタグを消す（それかdelete image）すれば良い
