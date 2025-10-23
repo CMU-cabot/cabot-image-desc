@@ -16,6 +16,8 @@
   - これを間違えるとimage-desc-serverにアップロードする際に向きがおかしなことになる
 <img width=40% height="1964" alt="Image" src="https://github.com/user-attachments/assets/c20330d4-f6a3-4523-ba8b-e68ba7039dd4"/>
 <img width=40% height="1968" alt="Image" src="https://github.com/user-attachments/assets/7f2bc4e8-2fd5-412f-b80e-4e170c825369"/>
+
+#### その他，撮影時の注意点
 - ロボットが通り得るパスで挟まれているオブジェクトがあったり，あるいは壁で仕切られているエリアはデータを密に撮るようにする
   - データが少ないと，右にあるものを左にあると読んでしまうことがある．
   - 基本的に「近いところにあるデータを取ってくる」という設計なので，壁に区切られていて実際にその場で見えるかは考慮していない
