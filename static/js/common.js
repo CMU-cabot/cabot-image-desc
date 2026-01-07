@@ -52,6 +52,9 @@ function showLocation(location, div) {
     var filename = location.filename;
     var date = new Date(linuxtime * 1000);
     var orientation = location.exif.Orientation;
+    const rotateStyle = (Number(orientation) === 3)
+      ? "transform: rotate(180deg); transform-origin: center;"
+      : "";
     var floor = location.floor;
     var relative_direction = location.exif.relative_direction;
     var relative_coordinates = location.relative_coordinates;
@@ -97,7 +100,7 @@ function showLocation(location, div) {
 
     // Display the information in the popup
     div.innerHTML = `
-        <img src="${image}" alt="Image" style="max-width: 200px; max-height: 200px; float: left; margin: 0px 10px 10px 0px;">
+        <img src="${image}" alt="Image" style="max-width: 200px; max-height: 200px; float: left; margin: 0px 10px 10px 0px; ${rotateStyle}">
         <button onclick="confirm('Are you sure you want to delete this image?') && deleteImage('${id}')">Delete Image</button>
         <strong>${filename}</strong> ${date} <br>
         <strong>Description:</strong> ${descriptionHTML} <br>
