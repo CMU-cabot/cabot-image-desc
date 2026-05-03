@@ -19,6 +19,7 @@
 # THE SOFTWARE.
 
 import base64
+import copy
 import datetime
 import json
 import logging
@@ -130,6 +131,54 @@ def parsed_value(result, key):
             setattr(result, "error", str(e))
             result.obj["error"] = str(e)
         return f"Error: No {key}"
+
+
+def format_directional_text_context(location_per_directions):
+    response = {}
+    for direction in ["front", "left", "right"]:
+        location = location_per_directions[direction]
+        has_location = location.get("distance", 9999) < 9999 and location.get("description", "") != ""
+        response[direction] = {
+            "found": has_location,
+            "text": location.get("description", "") if has_location else "",
+            "distance": location.get("distance") if has_location else None,
+            "relative_direction": location.get("relative_direction") if has_location else None,
+            "relative_coordinates": location.get("relative_coordinates") if has_location else None,
+            "source": {
+                "id": location.get("_id"),
+                "filename": location.get("filename"),
+                "floor": location.get("floor"),
+                "tags": location.get("tags", []),
+                "direction": location.get("direction"),
+                "location": location.get("location"),
+            } if has_location else None,
+        }
+    return response
+
+
+@router.get('/text_context', dependencies=[Depends(verify_api_key_or_cookie)])
+async def read_text_context_by_lat_lng(lat: float = Query(...),
+                                       lng: float = Query(...),
+                                       floor: int = Query(0),
+                                       rotation: float = Query(...),
+                                       max_count: Optional[int] = Query(10),
+                                       max_distance: Optional[float] = Query(100),
+                                       ):
+    logger.info("text_context get")
+    locations = get_description_by_lat_lng(lat, lng, floor, max_distance, max_count)
+    location_per_directions, _ = preprocess_descriptions(copy.deepcopy(locations), rotation, lat, lng, max_distance)
+
+    return {
+        "current_location": {
+            "lat": lat,
+            "lng": lng,
+            "floor": floor,
+        },
+        "rotation": rotation,
+        "max_count": max_count,
+        "max_distance": max_distance,
+        "directions": format_directional_text_context(location_per_directions),
+    }
 
 
 @router.get('/description', dependencies=[Depends(verify_api_key_or_cookie)])
