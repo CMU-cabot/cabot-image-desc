@@ -9,6 +9,13 @@ This server API provides functions to describe surrounding of the user of the su
 ```
 OPENAI_API_KEY=<key>
 
+# OpenAI model used for query descriptions (default: gpt-5.6-luna)
+OPENAI_MODEL=gpt-5.6-luna
+
+# OpenAI model used when generating descriptions during image upload
+# (default: gpt-5.6-luna)
+OPENAI_IMAGE_UPLOAD_MODEL=gpt-5.6-luna
+
 # default lng=0, lat=0, rotate=0, zoom=21, please specify the center of your environment
 INITIAL_LOCATION='{"lng": -79.94565, "lat": 40.44335, "rotate": 1, "zoom": 21}'
 
