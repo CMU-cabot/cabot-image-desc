@@ -32,6 +32,8 @@ services:
       - image_desc_network
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-5.6-luna}
+      - OPENAI_IMAGE_UPLOAD_MODEL=${OPENAI_IMAGE_UPLOAD_MODEL:-gpt-5.6-luna}
       - "INITIAL_LOCATION=${INITIAL_LOCATION:-{\"lat\": 35.6241, \"lng\":139.7754}}"
       - API_KEY
       - USERNAMES
@@ -99,6 +101,7 @@ services:
     environment:
       - VERBOSE_OUTPUT=${VERBOSE_OUTPUT:-false}
       - EXTRA_ARGS
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-5.6-luna}
     networks:
       - image_desc_network-test
     profiles:

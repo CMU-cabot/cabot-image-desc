@@ -35,6 +35,8 @@ os.environ["MONGODB_HOST"] = "mongodb://mongo-test:27017/"
 os.environ["OPENAI_API_KEY"] = os.environ.get("OPENAI_API_KEY", "__DUMMY_OPENAI_API_KEY__")
 
 from server.app import app   # noqa: E402, needs to be loaded after the environment variables are set
+from server.openai.openai_agent import GPTAgent  # noqa: E402, needs to be loaded after the environment variables are set
+from image_uploader import get_image_upload_model  # noqa: E402, needs to be loaded after the environment variables are set
 
 client = TestClient(app, follow_redirects=False)
 
@@ -89,6 +91,26 @@ def api_key_headers():
 
 
 # Test with a user/pass login cookies
+
+
+def test_gpt_agent_uses_openai_model_env(monkeypatch):
+    monkeypatch.setenv("OPENAI_MODEL", "test-model")
+    assert GPTAgent().model == "test-model"
+
+
+def test_gpt_agent_uses_default_openai_model(monkeypatch):
+    monkeypatch.delenv("OPENAI_MODEL", raising=False)
+    assert GPTAgent().model == "gpt-5.6-luna"
+
+
+def test_image_uploader_uses_openai_image_upload_model_env(monkeypatch):
+    monkeypatch.setenv("OPENAI_IMAGE_UPLOAD_MODEL", "test-upload-model")
+    assert get_image_upload_model() == "test-upload-model"
+
+
+def test_image_uploader_uses_default_openai_image_upload_model(monkeypatch):
+    monkeypatch.delenv("OPENAI_IMAGE_UPLOAD_MODEL", raising=False)
+    assert get_image_upload_model() == "gpt-5.6-luna"
 
 
 # Test the login endpoint

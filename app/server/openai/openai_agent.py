@@ -231,7 +231,7 @@ class DummyOpenAI:
                 def model_dump_json(self):
                     return json.dumps(self.obj, ensure_ascii=False)
 
-            async def parse(self, model, messages, max_tokens, response_format):
+            async def parse(self, model, messages, max_completion_tokens, response_format):
                 result = DummyOpenAI.Chat.Completions.DictToObject({
                     "choices": [
                         {
@@ -248,7 +248,7 @@ class DummyOpenAI:
                 result.choices[0].message.parsed = parsed_obj
                 return result
 
-            async def create(self, model, messages, max_tokens):
+            async def create(self, model, messages, max_completion_tokens):
                 return DummyOpenAI.Chat.Completions.DictToObject({
                     "choices": [
                         {
@@ -272,7 +272,7 @@ class DummyOpenAI:
 
 
 class GPTAgent:
-    def __init__(self, model="gpt-4o"):
+    def __init__(self, model=None):
         self.api_key = os.environ.get('OPENAI_API_KEY')
         if not self.api_key:
             raise ValueError("Please set the OPENAI_API_KEY environment variable.")
@@ -280,7 +280,7 @@ class GPTAgent:
             self.client = DummyOpenAI()
         else:
             self.client = AsyncOpenAI()
-        self.model = model
+        self.model = model or os.getenv('OPENAI_MODEL', 'gpt-5.6-luna')
         self.past_descriptions = []
 
     # Function to encode the image
@@ -349,7 +349,7 @@ class GPTAgent:
         query = {
             "model": self.model,
             "messages": messages,
-            "max_tokens": max_tokens
+            "max_completion_tokens": max_tokens
         }
         # Making the API call
         try:
