@@ -199,6 +199,60 @@ def test_read_description_by_lat_lng_with_api_key_ja(api_key_headers):
     assert response.status_code == 200
 
 
+def test_read_text_context_by_lat_lng_with_api_key(api_key_headers):
+    with open('/test/data/test.json') as f:
+        dummy_data = json.load(f)
+
+    entries = []
+    for offset, direction, label in [
+        (0.0, 0, "Front POI"),
+        (0.00001, 270, "Left sign"),
+        (-0.00001, 90, "Right POI"),
+    ]:
+        entry = dict(dummy_data)
+        entry["_id"] = ObjectId()
+        entry["location"] = {
+            "type": "Point",
+            "coordinates": [139.7754 + offset, 35.62414]
+        }
+        entry["direction"] = direction
+        entry["tags"] = ["poi"] if "POI" in label else ["sign"]
+        entry["description"] = label
+        entry["filename"] = f"{label}.jpg"
+        entries.append(entry)
+
+    image_collection.insert_many(entries)
+
+    response = client.get(
+        "/text_context?lat=35.62414&lng=139.7754&floor=0&rotation=0.0&max_count=10&max_distance=100",
+        headers=api_key_headers
+    )
+    assert response.status_code == 200
+    json_response = response.json()
+    assert "directions" in json_response
+    assert json_response["directions"]["front"]["found"] is True
+    assert json_response["directions"]["left"]["found"] is True
+    assert json_response["directions"]["right"]["found"] is True
+    assert json_response["directions"]["front"]["text"].startswith("前：")
+    assert json_response["directions"]["left"]["text"].startswith("左：")
+    assert json_response["directions"]["right"]["text"].startswith("右：")
+
+
+def test_read_text_context_by_lat_lng_returns_empty_when_no_tagged_locations(api_key_headers):
+    response = client.get(
+        "/text_context?lat=35.62414&lng=139.7754&floor=0&rotation=0.0&max_count=10&max_distance=100",
+        headers=api_key_headers
+    )
+    assert response.status_code == 200
+    json_response = response.json()
+    assert json_response["directions"]["front"]["found"] is False
+    assert json_response["directions"]["front"]["text"] == ""
+    assert json_response["directions"]["left"]["found"] is False
+    assert json_response["directions"]["left"]["text"] == ""
+    assert json_response["directions"]["right"]["found"] is False
+    assert json_response["directions"]["right"]["text"] == ""
+
+
 # Test read_description_by_lat_lng_with_image endpoint using dummy image from test.json
 def test_read_description_by_lat_lng_with_image_ja(api_key_headers, insert_dummy_data):
     with open('/test/data/test.json') as f:
