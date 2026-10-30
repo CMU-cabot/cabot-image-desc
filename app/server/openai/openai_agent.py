@@ -280,7 +280,7 @@ class GPTAgent:
             self.client = DummyOpenAI()
         else:
             self.client = AsyncOpenAI()
-        self.model = model or os.getenv('OPENAI_MODEL', 'gpt-5.6-luna')
+        self.model = model or os.getenv('OPENAI_MODEL', 'gpt-6-luna')
         self.past_descriptions = []
 
     # Function to encode the image
