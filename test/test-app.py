@@ -100,7 +100,7 @@ def test_gpt_agent_uses_openai_model_env(monkeypatch):
 
 def test_gpt_agent_uses_default_openai_model(monkeypatch):
     monkeypatch.delenv("OPENAI_MODEL", raising=False)
-    assert GPTAgent().model == "gpt-5.6-luna"
+    assert GPTAgent().model == "gpt-6-luna"
 
 
 def test_image_uploader_uses_openai_image_upload_model_env(monkeypatch):
@@ -110,7 +110,7 @@ def test_image_uploader_uses_openai_image_upload_model_env(monkeypatch):
 
 def test_image_uploader_uses_default_openai_image_upload_model(monkeypatch):
     monkeypatch.delenv("OPENAI_IMAGE_UPLOAD_MODEL", raising=False)
-    assert get_image_upload_model() == "gpt-5.6-luna"
+    assert get_image_upload_model() == "gpt-6-luna"
 
 
 # Test the login endpoint

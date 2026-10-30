@@ -56,7 +56,7 @@ if os.getenv('OPENAI_API_KEY'):
 
 
 def get_image_upload_model():
-    return os.getenv('OPENAI_IMAGE_UPLOAD_MODEL', 'gpt-5.6-luna')
+    return os.getenv('OPENAI_IMAGE_UPLOAD_MODEL', 'gpt-6-luna')
 
 
 def transcribe_image_query(filepath):

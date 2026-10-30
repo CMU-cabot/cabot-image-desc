@@ -86,7 +86,7 @@ if [[ -n "$CABOT_LAUNCH_DEV_PROFILE" ]] && [[ $profile = "prod" ]];  then
     profile=dev
 fi
 
-if [[ $profile = "test" ]]; then
+if [[ $profile = "test" || $profile = "openai" ]]; then
     com="docker compose -f $dcfile --profile test-db up -d"
     echo $com
     eval $com
